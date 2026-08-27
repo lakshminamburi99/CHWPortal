@@ -26,6 +26,8 @@ htmlcov/
 # Database files & containers data
 *.db
 *.sqlite3
+# Exception: bundle the seed database for migration to Cloud SQL
+!backend/chw_care.db
 cwst_postgres_data/
 
 # IDE / OS files
