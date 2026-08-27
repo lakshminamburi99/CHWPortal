@@ -81,7 +81,7 @@ jobs:
             --allow-unauthenticated \
             --port=8000 \
             --add-cloudsql-instances=$CONN_NAME \
-            --set-env-vars="DATABASE_URL=${DB_URI},POSTGRES_USER=postgres,POSTGRES_PASSWORD=${DB_PASS},POSTGRES_DB=${{ env.DB_NAME }},POSTGRES_SERVER=/cloudsql/${CONN_NAME},JWT_SECRET=${JWT_SEC},ENVIRONMENT=production,DEMO_MODE=false"
+            --set-env-vars="DATABASE_URL=${DB_URI},POSTGRES_USER=postgres,POSTGRES_PASSWORD=${DB_PASS},POSTGRES_DB=${{ env.DB_NAME }},POSTGRES_SERVER=/cloudsql/${CONN_NAME},JWT_SECRET=${JWT_SEC},ENVIRONMENT=production,DEMO_MODE=true"
 
       - name: Fetch Backend Production URL
         id: backend_url

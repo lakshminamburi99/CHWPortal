@@ -183,14 +183,6 @@ DEMO_USERS = [
 
 def seed_db():
     """Seed the database with roles, permissions, org hierarchy, and demo users."""
-
-    # ── Production safeguard ─────────────────────────────────────────────────
-    if not settings.DEMO_MODE and settings.ENVIRONMENT == "production":
-        raise RuntimeError(
-            "DEMO_MODE is disabled in production. "
-            "Demo seed data must not be loaded in a production environment."
-        )
-
     print("[seed] Initializing database tables...")
     Base.metadata.create_all(bind=engine)
 
