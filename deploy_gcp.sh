@@ -17,7 +17,7 @@ PROJECT_ID="${PROJECT_ID:-$(gcloud config get-value project 2>/dev/null || echo 
 DB_INSTANCE="${DB_INSTANCE:-chw-db-instance}"
 DB_NAME="${DB_NAME:-chw_care_db}"
 DB_USER="${DB_USER:-postgres}"
-DB_PASSWORD="${DB_PASSWORD:-Password123!}"
+DB_PASSWORD="${DB_PASSWORD:-India@202608!}"
 REPO_NAME="${REPO_NAME:-chw-repo}"
 JWT_SECRET="${JWT_SECRET:-$(openssl rand -hex 32 2>/dev/null || echo "SecretJWTKeyForCWSTPlatform2026")}"
 
