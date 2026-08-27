@@ -100,9 +100,6 @@ pg_inspector = inspect(pg_engine)
 total_migrated = 0
 
 with pg_engine.begin() as pg_conn:
-    # Disable FK checks during bulk insert
-    pg_conn.execute(text("SET session_replication_role = replica;"))
-
     for table in ORDERED_TABLES:
         if table not in sqlite_tables:
             continue
@@ -140,8 +137,6 @@ with pg_engine.begin() as pg_conn:
 
         total_migrated += count
         print(f"[migrate]   {table:<40} → {count} rows inserted/skipped")
-
-    pg_conn.execute(text("SET session_replication_role = DEFAULT;"))
 
 sqlite_conn.close()
 print(f"\n[migrate] ✅ Migration complete. {total_migrated} total rows migrated to Cloud SQL.")
