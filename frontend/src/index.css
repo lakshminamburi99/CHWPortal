@@ -1,0 +1,201 @@
+/* Plus Jakarta Sans loaded via index.html <link> tag for optimal performance */
+
+/* ──────────────────────────────────────────────────────────────
+   EXACT DESIGN TOKENS EXTRACTED FROM REFERENCE CSS
+   Font: Plus Jakarta Sans (matches reference --font-sans)
+   Colors: Converted from oklch to hex equivalents
+   ────────────────────────────────────────────────────────────── */
+
+:root {
+  /* Font (EXACT match to reference --font-sans) */
+  --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+
+  /* Border radius (from reference: --radius: .75rem) */
+  --radius: 0.75rem;
+  --radius-sm: calc(var(--radius) - 4px);   /* 0.5rem  */
+  --radius-md: calc(var(--radius) - 2px);   /* 0.625rem */
+  --radius-lg: var(--radius);               /* 0.75rem */
+  --radius-xl: calc(var(--radius) + 4px);   /* 1rem */
+
+  /* ── Light mode colors (from reference :root block) ── */
+  /* --background: oklch(98.2% .006 248) */
+  --background: #f5f7fb;
+  /* --foreground: oklch(24% .055 260) */
+  --foreground: #1a2035;
+  /* --card: oklch(100% 0 0) */
+  --card: #ffffff;
+  --card-foreground: #1a2035;
+  /* --primary: oklch(38% .062 255) */
+  --primary: #263a6e;
+  --primary-foreground: #f9faff;
+  --primary-soft: #e8edf8;
+  --primary-glow: #4a6bbf;
+  /* --secondary: oklch(94.8% .008 248) */
+  --secondary: #eef0f8;
+  --secondary-foreground: #2a3252;
+  /* --muted: oklch(95.5% .006 248) */
+  --muted: #eff1f7;
+  --muted-foreground: #6b7399;
+  /* --accent: oklch(62% .088 226) */
+  --accent: #3b7dd8;
+  --accent-foreground: #ffffff;
+  --accent-soft: #e4eef9;
+  /* --destructive: oklch(56% .145 22) */
+  --destructive: #c0392b;
+  --destructive-foreground: #fff9f8;
+  /* --border: oklch(90.5% .008 250) */
+  --border: #dde1ef;
+  /* --ring: oklch(58% .08 244) */
+  --ring: #6b8ec8;
+  /* --sidebar: oklch(26% .035 258) */
+  --sidebar: #1e2840;
+  --sidebar-foreground: #e8eaf5;
+  /* --sidebar-primary: oklch(68% .082 226) — the accent/highlight color in sidebar */
+  --sidebar-primary: #5a9cf0;
+  --sidebar-primary-foreground: #18213a;
+  /* --sidebar-accent: oklch(33% .038 258) — hover/active bg in sidebar */
+  --sidebar-accent: #293552;
+  --sidebar-accent-foreground: #f0f2fc;
+  --sidebar-border: rgba(255,255,255,0.12);
+
+  /* Shadows (from reference) */
+  --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.08), 0 12px 30px -20px rgba(15, 23, 42, 0.28);
+  --shadow-raised: 0 2px 6px rgba(15, 23, 42, 0.12), 0 24px 48px -26px rgba(15, 23, 42, 0.34);
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1);
+
+  /* Transitions */
+  --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Layout */
+  --sidebar-width: 260px;
+  --header-height: 60px;
+}
+
+/* ──────────────────────────────────────────────────────────────
+   BASE RESET & TYPOGRAPHY
+   ────────────────────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+  tab-size: 4;
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  line-height: 1.5;
+  background-color: var(--background);
+  color: var(--foreground);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button, input, select, textarea {
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+}
+
+img, svg, video {
+  display: block;
+  max-width: 100%;
+}
+
+/* ──────────────────────────────────────────────────────────────
+   UTILITY CLASSES
+   ────────────────────────────────────────────────────────────── */
+
+/* Badge variants */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 9999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+.badge-danger   { background-color: #fee2e2; color: #b91c1c; }
+.badge-warning  { background-color: #fef3c7; color: #92400e; }
+.badge-success  { background-color: #dcfce7; color: #15803d; }
+.badge-info     { background-color: #dbeafe; color: #1d4ed8; }
+.badge-default  { background-color: var(--muted); color: var(--muted-foreground); }
+
+/* Text */
+.text-muted { color: var(--muted-foreground); }
+.text-danger { color: var(--destructive); }
+.text-success { color: #16a34a; }
+
+/* Button base */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  border: none;
+  white-space: nowrap;
+  line-height: 1;
+}
+.btn-primary   { background: var(--primary); color: var(--primary-foreground); }
+.btn-primary:hover { background: #1a2d5a; }
+.btn-outline   { background: transparent; border: 1px solid var(--border); color: var(--foreground); }
+.btn-outline:hover { background: var(--muted); }
+.btn-danger    { background: var(--destructive); color: var(--destructive-foreground); }
+.btn-danger:hover  { opacity: 0.9; }
+.btn-ghost     { background: transparent; border: none; color: var(--foreground); }
+.btn-ghost:hover   { background: var(--muted); }
+.btn-sm { padding: 0.3rem 0.75rem; font-size: 0.8rem; }
+.btn-lg { padding: 0.75rem 1.5rem; font-size: 1rem; }
+.btn-icon { padding: 0.5rem; }
+
+/* Card */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+
+/* Input */
+.input {
+  width: 100%;
+  height: 40px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0 0.75rem;
+  font-size: 0.875rem;
+  font-family: inherit;
+  background: var(--card);
+  color: var(--foreground);
+  outline: none;
+  transition: border-color var(--transition-fast);
+}
+.input:focus { border-color: var(--ring); box-shadow: 0 0 0 3px rgba(107,142,200,0.15); }
