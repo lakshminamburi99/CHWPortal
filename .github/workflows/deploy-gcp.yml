@@ -125,7 +125,10 @@ jobs:
 
           echo "Password reset done. Running migration..."
 
-          export DATABASE_URL="postgresql://postgres:${DB_PASS}@localhost:5432/${{ env.DB_NAME }}"
+          # URL-encode the password to handle special characters (like @)
+          DB_PASS_ENCODED=$(python3 -c "import urllib.parse, sys; print(urllib.parse.quote_plus(sys.argv[1]))" "$DB_PASS")
+
+          export DATABASE_URL="postgresql://postgres:${DB_PASS_ENCODED}@localhost:5432/${{ env.DB_NAME }}"
           cd backend
           python migrate_sqlite_to_cloudsql.py
 
@@ -166,10 +169,13 @@ jobs:
           DB_PASS="${{ secrets.DB_PASSWORD }}"
           if [ -z "$DB_PASS" ]; then DB_PASS="Password123!"; fi
 
+          # URL-encode the password to handle special characters (like @)
+          DB_PASS_ENCODED=$(python3 -c "import urllib.parse, sys; print(urllib.parse.quote_plus(sys.argv[1]))" "$DB_PASS")
+
           JWT_SEC="${{ secrets.JWT_SECRET }}"
           if [ -z "$JWT_SEC" ]; then JWT_SEC="SecretJWTKeyForCWSTPlatform2026"; fi
 
-          DB_URI="postgresql://postgres:${DB_PASS}@/${{ env.DB_NAME }}?host=/cloudsql/${CONN_NAME}"
+          DB_URI="postgresql://postgres:${DB_PASS_ENCODED}@/${{ env.DB_NAME }}?host=/cloudsql/${CONN_NAME}"
 
           gcloud run deploy chw-backend \
             --image="${{ env.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.ARTIFACT_REPO }}/backend:${{ github.sha }}" \
