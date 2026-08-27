@@ -55,7 +55,10 @@ class Settings(BaseSettings):
     @property
     def sync_database_url(self) -> str:
         if self.DATABASE_URL:
-            return self.DATABASE_URL
+            url = self.DATABASE_URL
+            if url.startswith("postgresql://"):
+                url = url.replace("postgresql://", "postgresql+psycopg2://", 1)
+            return url
         # If POSTGRES_SERVER is set to something non-localhost or explicitly configured via env
         import os
         if "DATABASE_URL" in os.environ:
