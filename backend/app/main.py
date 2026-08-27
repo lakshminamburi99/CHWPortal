@@ -77,17 +77,20 @@ async def add_security_headers(request: Request, call_next):
     return response
 
 
-# ── Structured error handler — never leaks internals ─────────────────────────
+# ── Structured error handler — diagnostic details for troubleshooting ─────────
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     import traceback, sys
-    print(traceback.format_exc(), file=sys.stderr, flush=True)
+    error_trace = traceback.format_exc()
+    print(error_trace, file=sys.stderr, flush=True)
     return JSONResponse(
         status_code=500,
         content={
             "error": {
                 "code":    "INTERNAL_SERVER_ERROR",
-                "message": "An unexpected error occurred.",
+                "message": str(exc) if str(exc) else "An unexpected error occurred.",
+                "type":    type(exc).__name__,
+                "detail":  error_trace.splitlines()[-3:],
             }
         },
     )
