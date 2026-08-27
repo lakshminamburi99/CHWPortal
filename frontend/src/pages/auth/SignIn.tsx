@@ -123,7 +123,8 @@ export const SignIn = () => {
       });
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data?.detail?.message || 'Invalid credentials');
+        const msg = data?.error?.message || data?.detail?.message || data?.detail || 'Invalid email or password';
+        throw new Error(msg);
       }
       localStorage.setItem('access_token', data.access_token);
       localStorage.setItem('refresh_token', data.refresh_token);
