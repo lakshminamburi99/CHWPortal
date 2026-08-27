@@ -5,7 +5,7 @@ import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { useAuth } from '../../App';
 
-const API_BASE = 'http://localhost:8000/api/v1';
+import { API_BASE } from '../../config';
 
 const categoryVariant: Record<string, 'danger' | 'warning' | 'info' | 'success' | 'default'> = {
   HIGH_PRIORITY: 'danger',

@@ -5,7 +5,7 @@ import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
 
-const API_BASE = 'http://localhost:8000/api/v1';
+import { API_BASE } from '../../config';
 
 const initialProgramMetrics = [
   { id: 'prog-1', name: 'Maternal ANC Coverage (8+ Contacts)', owner: 'Dr. Sarah Chen', target: 90, actual: 84, trend: 'UP' },

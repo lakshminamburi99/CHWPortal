@@ -3,7 +3,7 @@ import { Card, CardContent } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 
-const API_BASE = 'http://localhost:8000/api/v1';
+import { API_BASE } from '../../config';
 
 const statusLabel: Record<string, string> = { DUE_TODAY: 'Due today', UPCOMING: 'Upcoming', OVERDUE: 'Overdue', COMPLETED: 'Completed' };
 const statusVariant: Record<string, 'danger' | 'warning' | 'success' | 'info'> = {

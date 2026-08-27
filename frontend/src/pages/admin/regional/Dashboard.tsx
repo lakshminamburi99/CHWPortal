@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 
-const API_BASE = 'http://localhost:8000/api/v1';
+import { API_BASE } from '../../../config';
 
 // NOTE: Regional Admin has NO clinical data access
 export const RegionalAdminDashboard = () => {

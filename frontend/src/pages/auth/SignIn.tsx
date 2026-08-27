@@ -97,7 +97,7 @@ const langOptions = [
   { value: 'hi', label: 'हिन्दी', abbr: 'HI' },
 ];
 
-const API_BASE = 'http://localhost:8000/api/v1';
+import { API_BASE } from '../../config';
 
 // ─── Component ───────────────────────────────────────────────────────────────
 export const SignIn = () => {
