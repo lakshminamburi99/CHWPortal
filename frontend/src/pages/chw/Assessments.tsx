@@ -20,7 +20,7 @@ const assessmentQuestions = [
   { id: 'q5', text: 'Any additional clinical notes?', helpText: 'Record any observations not captured by the questions above.', type: 'text' },
 ];
 
-const API_BASE = 'http://localhost:8000/api/v1';
+import { API_BASE } from '../../config';
 
 export const AssessmentsPage = () => {
   const [searchParams] = useSearchParams();

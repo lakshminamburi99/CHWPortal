@@ -4,7 +4,7 @@ import { Card, CardContent } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
 
-const API_BASE = 'http://localhost:8000/api/v1';
+import { API_BASE } from '../../config';
 
 export const TeamsPage = () => {
   const [searchParams] = useSearchParams();

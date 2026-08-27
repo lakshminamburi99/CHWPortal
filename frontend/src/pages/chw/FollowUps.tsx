@@ -5,7 +5,7 @@ import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
 import { useAuth } from '../../App';
 
-const API_BASE = 'http://localhost:8000/api/v1';
+import { API_BASE } from '../../config';
 
 const statusLabel: Record<string, string> = {
   DUE_TODAY: 'Due today',

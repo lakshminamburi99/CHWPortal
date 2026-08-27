@@ -3,7 +3,7 @@ import { Card, CardContent } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 
-const API_BASE = 'http://localhost:8000/api/v1';
+import { API_BASE } from '../../config';
 
 const priorityVariant: Record<string, 'danger' | 'warning' | 'success'> = {
   HIGH: 'danger',

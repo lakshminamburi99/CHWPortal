@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardContent } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 
-const API_BASE = 'http://localhost:8000/api/v1';
+import { API_BASE } from '../../config';
 
 export const DistrictsPage = () => {
   const navigate = useNavigate();

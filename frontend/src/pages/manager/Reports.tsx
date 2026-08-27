@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardContent } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 
-const API_BASE = 'http://localhost:8000/api/v1';
+import { API_BASE } from '../../config';
 
 const reportTypes = [
   { id: 'r-1', name: 'Monthly programme summary', description: 'Aggregate patient, assessment, and outcome data for the month.', period: 'August 2026' },

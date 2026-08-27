@@ -57,15 +57,6 @@ jobs:
           docker push $IMAGE_TAG
           docker push $IMAGE_LATEST
 
-      - name: Build & Push Frontend Image
-        run: |
-          IMAGE_TAG="${{ env.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.ARTIFACT_REPO }}/frontend:${{ github.sha }}"
-          IMAGE_LATEST="${{ env.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.ARTIFACT_REPO }}/frontend:latest"
-          
-          docker build -t $IMAGE_TAG -t $IMAGE_LATEST ./frontend
-          docker push $IMAGE_TAG
-          docker push $IMAGE_LATEST
-
       - name: Fetch Cloud SQL Connection Name
         id: cloudsql
         run: |
@@ -91,6 +82,22 @@ jobs:
             --port=8000 \
             --add-cloudsql-instances=$CONN_NAME \
             --set-env-vars="DATABASE_URL=${DB_URI},POSTGRES_USER=postgres,POSTGRES_PASSWORD=${DB_PASS},POSTGRES_DB=${{ env.DB_NAME }},POSTGRES_SERVER=/cloudsql/${CONN_NAME},JWT_SECRET=${JWT_SEC},ENVIRONMENT=production,DEMO_MODE=false"
+
+      - name: Fetch Backend Production URL
+        id: backend_url
+        run: |
+          URL=$(gcloud run services describe chw-backend --region=${{ env.GCP_REGION }} --format="value(status.url)")
+          echo "url=$URL" >> $GITHUB_OUTPUT
+
+      - name: Build & Push Frontend Image
+        run: |
+          BACKEND_API_URL="${{ steps.backend_url.outputs.url }}/api/v1"
+          IMAGE_TAG="${{ env.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.ARTIFACT_REPO }}/frontend:${{ github.sha }}"
+          IMAGE_LATEST="${{ env.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.ARTIFACT_REPO }}/frontend:latest"
+          
+          docker build --build-arg VITE_API_URL="$BACKEND_API_URL" -t $IMAGE_TAG -t $IMAGE_LATEST ./frontend
+          docker push $IMAGE_TAG
+          docker push $IMAGE_LATEST
 
       - name: Deploy Frontend to Cloud Run
         run: |
