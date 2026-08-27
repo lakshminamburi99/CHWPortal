@@ -27,12 +27,18 @@ from app.api.v1.messages     import router as messages_router
 # ── Startup / Shutdown ────────────────────────────────────────────────────────
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    try:
-        init_db()
-        seed_db()
-    except Exception as e:
-        import sys
-        print(f"Warning: Initial DB setup deferred: {e}", file=sys.stderr, flush=True)
+    import time, sys
+    for attempt in range(1, 6):
+        try:
+            print(f"Initializing database (attempt {attempt}/5)...", file=sys.stderr, flush=True)
+            init_db()
+            seed_db()
+            print("Database initialized and seeded successfully!", file=sys.stderr, flush=True)
+            break
+        except Exception as e:
+            print(f"DB connection attempt {attempt} failed: {e}", file=sys.stderr, flush=True)
+            if attempt < 5:
+                time.sleep(2)
     yield
 
 
