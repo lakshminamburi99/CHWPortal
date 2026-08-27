@@ -125,10 +125,8 @@ jobs:
 
           echo "Password reset done. Running migration..."
 
-          # URL-encode the password to handle special characters (like @)
-          DB_PASS_ENCODED=$(python3 -c "import urllib.parse, sys; print(urllib.parse.quote_plus(sys.argv[1]))" "$DB_PASS")
-
-          export DATABASE_URL="postgresql://postgres:${DB_PASS_ENCODED}@localhost:5432/${{ env.DB_NAME }}"
+          export PG_PASSWORD="${DB_PASS}"
+          export PG_DB="${{ env.DB_NAME }}"
           cd backend
           python migrate_sqlite_to_cloudsql.py
 

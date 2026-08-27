@@ -64,8 +64,10 @@ class Settings(BaseSettings):
         if "DATABASE_URL" in os.environ:
             return os.environ["DATABASE_URL"]
         if "POSTGRES_SERVER" in os.environ and os.environ["POSTGRES_SERVER"] != "localhost":
+            import urllib.parse
+            encoded_password = urllib.parse.quote_plus(self.POSTGRES_PASSWORD) if self.POSTGRES_PASSWORD else ""
             return (
-                f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
+                f"postgresql+psycopg2://{self.POSTGRES_USER}:{encoded_password}"
                 f"@{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
             )
         # Default local dev fallback to SQLite for immediate out-of-the-box execution
