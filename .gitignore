@@ -33,3 +33,9 @@ cwst_postgres_data/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Documentation & Plan files
+implementation_plan.md
+cloudimp.md
+README.md
+
