@@ -30,10 +30,12 @@ async def lifespan(app: FastAPI):
     import time, sys
     for attempt in range(1, 6):
         try:
-            print(f"Initializing database (attempt {attempt}/5)...", file=sys.stderr, flush=True)
+            print(f"Initializing database & migrating SQLite data (attempt {attempt}/5)...", file=sys.stderr, flush=True)
             init_db()
             seed_db()
-            print("Database initialized and seeded successfully!", file=sys.stderr, flush=True)
+            from app.db.migrate_to_cloudsql import migrate_sqlite_to_postgres
+            migrate_sqlite_to_postgres()
+            print("Database initialized, seeded, and migrated successfully!", file=sys.stderr, flush=True)
             break
         except Exception as e:
             print(f"DB connection attempt {attempt} failed: {e}", file=sys.stderr, flush=True)
