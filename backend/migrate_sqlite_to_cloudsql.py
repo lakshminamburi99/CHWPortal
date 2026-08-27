@@ -29,12 +29,25 @@ if not SQLITE_FILE.exists():
 
 
 # ── 2. Build PostgreSQL engine ────────────────────────────────────────────────
+import urllib.parse
+
 DB_URL = os.environ.get("DATABASE_URL") or os.environ.get("MIGRATE_DATABASE_URL")
 if not DB_URL:
-    print("[migrate] ERROR: DATABASE_URL not set.", file=sys.stderr)
+    pg_user = os.environ.get("PG_USER", "postgres")
+    pg_pass = os.environ.get("PG_PASSWORD", "")
+    pg_host = os.environ.get("PG_HOST", "localhost")
+    pg_port = os.environ.get("PG_PORT", "5432")
+    pg_db = os.environ.get("PG_DB", "")
+    
+    if pg_pass and pg_db:
+        pg_pass_encoded = urllib.parse.quote_plus(pg_pass)
+        DB_URL = f"postgresql+psycopg2://{pg_user}:{pg_pass_encoded}@{pg_host}:{pg_port}/{pg_db}"
+
+if not DB_URL:
+    print("[migrate] ERROR: DATABASE_URL or components not set.", file=sys.stderr)
     sys.exit(1)
 
-# Ensure psycopg2 driver prefix
+# Ensure psycopg2 driver prefix if a raw URL was provided
 if DB_URL.startswith("postgresql://"):
     DB_URL = DB_URL.replace("postgresql://", "postgresql+psycopg2://", 1)
 
