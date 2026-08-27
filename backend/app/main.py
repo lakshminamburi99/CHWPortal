@@ -27,8 +27,12 @@ from app.api.v1.messages     import router as messages_router
 # ── Startup / Shutdown ────────────────────────────────────────────────────────
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    init_db()
-    seed_db()
+    try:
+        init_db()
+        seed_db()
+    except Exception as e:
+        import sys
+        print(f"Warning: Initial DB setup deferred: {e}", file=sys.stderr, flush=True)
     yield
 
 
