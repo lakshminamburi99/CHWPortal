@@ -120,7 +120,7 @@ gcloud run deploy chw-backend \
     --allow-unauthenticated \
     --port=8000 \
     --add-cloudsql-instances="${INSTANCE_CONNECTION_NAME}" \
-    --set-env-vars="DATABASE_URL=${DB_SOCKET_URI},POSTGRES_USER=${DB_USER},POSTGRES_PASSWORD=${DB_PASSWORD},POSTGRES_DB=${DB_NAME},POSTGRES_SERVER=/cloudsql/${INSTANCE_CONNECTION_NAME},JWT_SECRET=${JWT_SECRET},ENVIRONMENT=production,DEMO_MODE=false" \
+    --set-env-vars="DATABASE_URL=${DB_SOCKET_URI},POSTGRES_USER=${DB_USER},POSTGRES_PASSWORD=${DB_PASSWORD},POSTGRES_DB=${DB_NAME},POSTGRES_SERVER=/cloudsql/${INSTANCE_CONNECTION_NAME},JWT_SECRET=${JWT_SECRET},ENVIRONMENT=production,DEMO_MODE=true" \
     --project="${PROJECT_ID}"
 
 BACKEND_URL=$(gcloud run services describe chw-backend --region="${REGION}" --project="${PROJECT_ID}" --format="value(status.url)")
