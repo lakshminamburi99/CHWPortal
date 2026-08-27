@@ -1,0 +1,35 @@
+# Dependencies
+node_modules/
+frontend/node_modules/
+backend/venv/
+.venv/
+env/
+venv/
+
+# Environment Variables
+.env
+backend/.env
+
+# Build outputs
+frontend/dist/
+dist/
+build/
+
+# Python cache & artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Database files & containers data
+*.db
+*.sqlite3
+cwst_postgres_data/
+
+# IDE / OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

@@ -1,0 +1,255 @@
+"""
+Authentication API:
+  POST /login      — credential verification, session creation, audit log
+  GET  /session    — validate current session, return user + permissions
+  POST /logout     — revoke session
+  POST /refresh    — exchange refresh token for new access token
+"""
+from datetime import datetime, timedelta, timezone
+from typing import Optional
+
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+from pydantic import BaseModel, EmailStr
+from sqlalchemy.orm import Session
+
+from app.api.deps import get_db
+from app.config import settings
+from app.core.audit import write_audit, AuditAction
+from app.core.rbac import get_current_user, _extract_token
+from app.core.security import (
+    verify_password,
+    hash_password,
+    needs_rehash,
+    generate_session_token,
+    create_access_token,
+    create_refresh_token,
+    decode_token,
+    hash_session_token,
+)
+from app.models.user import UserModel, SessionModel
+
+router = APIRouter()
+
+
+# ── Request / Response schemas ────────────────────────────────────────────────
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+
+class UserOut(BaseModel):
+    id:                 str
+    email:              str
+    display_name:       str
+    role:               Optional[str]
+    permissions:        list[str]
+    preferred_language: str
+    organization_id:    Optional[str]
+    region_id:          Optional[str]
+    district_id:        Optional[str]
+    team_id:            Optional[str]
+
+    class Config:
+        from_attributes = True
+
+
+class TokenResponse(BaseModel):
+    access_token:  str
+    refresh_token: str
+    token_type:    str = "bearer"
+    expires_in:    int                  # seconds
+    user:          UserOut
+
+
+# ── Helpers ───────────────────────────────────────────────────────────────────
+def _build_user_out(user: UserModel) -> UserOut:
+    return UserOut(
+        id=user.id,
+        email=user.email,
+        display_name=user.display_name or user.full_name,
+        role=user.effective_role,
+        permissions=sorted(user.permission_codes),
+        preferred_language=user.preferred_language,
+        organization_id=user.organization_id,
+        region_id=user.region_id,
+        district_id=user.district_id,
+        team_id=user.team_id,
+    )
+
+
+def _create_session(user: UserModel, request: Request, db: Session) -> tuple[str, str, SessionModel]:
+    """Create DB session + access + refresh tokens. Returns (access, refresh, session)."""
+    raw_token, token_hash = generate_session_token()
+
+    expires_at = datetime.now(timezone.utc) + timedelta(hours=settings.SESSION_ABSOLUTE_HOURS)
+    session = SessionModel(
+        user_id=user.id,
+        session_token_hash=token_hash,
+        expires_at=expires_at,
+        ip_address=request.client.host if request.client else None,
+        user_agent=request.headers.get("User-Agent"),
+    )
+    db.add(session)
+    db.flush()   # get session.id
+
+    permissions = sorted(user.permission_codes)
+    access  = create_access_token(
+        subject=user.id,
+        role=user.effective_role or "",
+        permissions=permissions,
+        session_id=session.id,
+    )
+    refresh = create_refresh_token(subject=user.id, session_id=session.id)
+    return access, refresh, session
+
+
+# ── POST /login ───────────────────────────────────────────────────────────────
+@router.post("/login", response_model=TokenResponse)
+def login(payload: LoginRequest, request: Request, db: Session = Depends(get_db)):
+    ip = request.client.host if request.client else "unknown"
+    ua = request.headers.get("User-Agent", "")
+    email = payload.email.strip().lower()
+
+    # Fetch user — don't reveal whether email exists (timing-safe)
+    user: Optional[UserModel] = db.query(UserModel).filter(
+        UserModel.email == email,
+        UserModel.deleted_at.is_(None),
+    ).first()
+
+    def _fail(reason: str):
+        if user:
+            user.failed_login_attempts = (user.failed_login_attempts or 0) + 1
+            if user.failed_login_attempts >= settings.MAX_FAILED_LOGINS:
+                user.locked_until = datetime.now(timezone.utc) + timedelta(minutes=settings.LOCKOUT_MINUTES)
+                write_audit(db, AuditAction.ACCOUNT_LOCKED, user_id=user.id, ip_address=ip, user_agent=ua,
+                            new_values={"reason": "exceeded_failed_logins"})
+            db.commit()
+        write_audit(db, AuditAction.LOGIN_FAILED, user_id=user.id if user else None,
+                    ip_address=ip, user_agent=ua, new_values={"email": email, "reason": reason})
+        db.commit()
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={"code": "INVALID_CREDENTIALS", "message": "Invalid email or password."},
+        )
+
+    if not user:
+        _fail("user_not_found")
+
+    # Lockout check
+    if user.locked_until and user.locked_until.replace(tzinfo=timezone.utc) > datetime.now(timezone.utc):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"code": "ACCOUNT_LOCKED", "message": "Account temporarily locked. Try again later."},
+        )
+
+    # Account status check
+    if user.status != "ACTIVE":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"code": "ACCOUNT_DISABLED", "message": "Account is not active. Contact your administrator."},
+        )
+
+    # Password verify
+    if not verify_password(payload.password, user.password_hash):
+        _fail("wrong_password")
+
+    # Rehash if parameters changed
+    if needs_rehash(user.password_hash):
+        user.password_hash = hash_password(payload.password)
+
+    # Reset failed attempts on success
+    user.failed_login_attempts = 0
+    user.locked_until          = None
+    user.last_login_at         = datetime.now(timezone.utc)
+
+    access, refresh, session = _create_session(user, request, db)
+
+    write_audit(db, AuditAction.LOGIN, user_id=user.id, session_id=session.id,
+                ip_address=ip, user_agent=ua)
+    db.commit()
+
+    return TokenResponse(
+        access_token=access,
+        refresh_token=refresh,
+        expires_in=settings.JWT_ACCESS_EXPIRE_MINUTES * 60,
+        user=_build_user_out(user),
+    )
+
+
+# ── GET /session ──────────────────────────────────────────────────────────────
+@router.get("/session", response_model=UserOut)
+def get_session(
+    current_user: UserModel = Depends(get_current_user),
+):
+    """Returns the current authenticated user's safe profile. Used by the frontend on app load."""
+    return _build_user_out(current_user)
+
+
+# ── POST /logout ──────────────────────────────────────────────────────────────
+@router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
+def logout(
+    request: Request,
+    current_user: UserModel = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    token = _extract_token(request)
+    if token:
+        payload = decode_token(token)
+        if payload:
+            session_id = payload.get("session_id")
+            session = db.query(SessionModel).filter(SessionModel.id == session_id).first()
+            if session:
+                session.revoked_at = datetime.now(timezone.utc)
+
+    write_audit(db, AuditAction.LOGOUT, user_id=current_user.id,
+                ip_address=request.client.host if request.client else None,
+                user_agent=request.headers.get("User-Agent"))
+    db.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+# ── POST /refresh ─────────────────────────────────────────────────────────────
+class RefreshRequest(BaseModel):
+    refresh_token: str
+
+
+@router.post("/refresh", response_model=TokenResponse)
+def refresh_token(payload: RefreshRequest, request: Request, db: Session = Depends(get_db)):
+    data = decode_token(payload.refresh_token)
+    if not data or data.get("type") != "refresh":
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                            detail={"code": "INVALID_TOKEN", "message": "Invalid or expired refresh token."})
+
+    user_id    = data.get("sub")
+    session_id = data.get("session_id")
+
+    session = db.query(SessionModel).filter(
+        SessionModel.id == session_id,
+        SessionModel.user_id == user_id,
+    ).first()
+
+    if not session or not session.is_valid:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                            detail={"code": "SESSION_INVALID", "message": "Session is invalid or revoked."})
+
+    user = db.query(UserModel).filter(
+        UserModel.id == user_id,
+        UserModel.status == "ACTIVE",
+        UserModel.deleted_at.is_(None),
+    ).first()
+
+    if not user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                            detail={"code": "USER_NOT_FOUND", "message": "User not found."})
+
+    # Revoke old session and create new one
+    session.revoked_at = datetime.now(timezone.utc)
+    access, refresh, new_session = _create_session(user, request, db)
+    db.commit()
+
+    return TokenResponse(
+        access_token=access,
+        refresh_token=refresh,
+        expires_in=settings.JWT_ACCESS_EXPIRE_MINUTES * 60,
+        user=_build_user_out(user),
+    )
