@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { API_BASE } from './config';
 
 // ---------------------------------------------------------
 // Types
@@ -39,13 +40,23 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const handleExpired = () => {
+      setUser(null);
+    };
+    window.addEventListener('auth_session_expired', handleExpired);
+    return () => {
+      window.removeEventListener('auth_session_expired', handleExpired);
+    };
+  }, []);
+
+  useEffect(() => {
+    // If we are using HttpOnly cookies, we can still call /auth/session.
+    // If access_token doesn't exist, we can try to fetch anyway because the cookie might be there!
+    // But to support localStorage fallback, we check for either.
     const token = localStorage.getItem('access_token');
-    if (!token) {
-      setLoading(false);
-      return;
-    }
-    fetch('http://localhost:8000/api/v1/auth/session', {
-      headers: { Authorization: `Bearer ${token}` },
+    
+    fetch(`${API_BASE}/auth/session`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
     })
       .then(res => {
         if (res.ok) return res.json();
@@ -77,12 +88,11 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
 
   const logout = () => {
     const token = localStorage.getItem('access_token');
-    if (token) {
-      fetch('http://localhost:8000/api/v1/auth/logout', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-      }).catch(() => {});
-    }
+    fetch(`${API_BASE}/auth/logout`, {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    }).catch(() => {});
+    
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
     localStorage.removeItem('user');

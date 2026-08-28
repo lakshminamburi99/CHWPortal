@@ -72,7 +72,6 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,
-    allow_origin_regex=r".*",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -98,6 +97,19 @@ async def global_exception_handler(request: Request, exc: Exception):
     import traceback, sys
     error_trace = traceback.format_exc()
     print(error_trace, file=sys.stderr, flush=True)
+    
+    # Secure error handling in production: hide stack trace/internal database names
+    if settings.ENVIRONMENT == "production":
+        return JSONResponse(
+            status_code=500,
+            content={
+                "error": {
+                    "code":    "INTERNAL_SERVER_ERROR",
+                    "message": "An unexpected error occurred.",
+                }
+            },
+        )
+        
     return JSONResponse(
         status_code=500,
         content={

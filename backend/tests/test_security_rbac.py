@@ -17,6 +17,11 @@ def setup_test_db():
     seed_db()
 
 
+@pytest.fixture(autouse=True)
+def clear_cookies():
+    client.cookies.clear()
+
+
 # ── 1. Argon2id Password Hashing Tests ────────────────────────────────────────
 def test_argon2id_hashing():
     pw = "SuperSecret123!"
