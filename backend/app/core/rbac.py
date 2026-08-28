@@ -26,7 +26,13 @@ ROLE_HIERARCHY = {
 
 # ── Session extraction ────────────────────────────────────────────────────────
 def _extract_token(request: Request) -> Optional[str]:
-    """Extract bearer token from Authorization header."""
+    """Extract bearer token from Cookie or Authorization header."""
+    # Try cookie first (preferred for browser sessions)
+    token = request.cookies.get("access_token")
+    if token:
+        return token
+
+    # Fallback to Authorization header
     auth = request.headers.get("Authorization", "")
     if auth.startswith("Bearer "):
         return auth[7:]

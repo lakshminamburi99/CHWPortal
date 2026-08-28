@@ -11,6 +11,10 @@ def setup_test_db():
     init_db()
     seed_db()
 
+@pytest.fixture(autouse=True)
+def clear_cookies():
+    client.cookies.clear()
+
 def get_token(email):
     res = client.post("/api/v1/auth/login", json={"email": email, "password": "demo"})
     return res.json()["access_token"]

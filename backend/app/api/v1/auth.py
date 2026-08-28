@@ -105,7 +105,7 @@ def _create_session(user: UserModel, request: Request, db: Session) -> tuple[str
 
 # ── POST /login ───────────────────────────────────────────────────────────────
 @router.post("/login", response_model=TokenResponse)
-def login(payload: LoginRequest, request: Request, db: Session = Depends(get_db)):
+def login(payload: LoginRequest, request: Request, response: Response, db: Session = Depends(get_db)):
     ip = request.client.host if request.client else "unknown"
     ua = request.headers.get("User-Agent", "")
     email = payload.email.strip().lower()
@@ -168,6 +168,24 @@ def login(payload: LoginRequest, request: Request, db: Session = Depends(get_db)
                 ip_address=ip, user_agent=ua)
     db.commit()
 
+    # Set secure HttpOnly cookies
+    response.set_cookie(
+        key="access_token",
+        value=access,
+        httponly=True,
+        secure=settings.ENVIRONMENT == "production",
+        samesite="lax" if settings.ENVIRONMENT != "production" else "none",
+        max_age=settings.JWT_ACCESS_EXPIRE_MINUTES * 60,
+    )
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh,
+        httponly=True,
+        secure=settings.ENVIRONMENT == "production",
+        samesite="lax" if settings.ENVIRONMENT != "production" else "none",
+        max_age=settings.JWT_REFRESH_EXPIRE_DAYS * 24 * 60 * 60,
+    )
+
     return TokenResponse(
         access_token=access,
         refresh_token=refresh,
@@ -189,6 +207,7 @@ def get_session(
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
 def logout(
     request: Request,
+    response: Response,
     current_user: UserModel = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -205,17 +224,38 @@ def logout(
                 ip_address=request.client.host if request.client else None,
                 user_agent=request.headers.get("User-Agent"))
     db.commit()
+
+    # Clear HttpOnly cookies
+    response.delete_cookie(
+        key="access_token",
+        secure=settings.ENVIRONMENT == "production",
+        samesite="lax" if settings.ENVIRONMENT != "production" else "none",
+    )
+    response.delete_cookie(
+        key="refresh_token",
+        secure=settings.ENVIRONMENT == "production",
+        samesite="lax" if settings.ENVIRONMENT != "production" else "none",
+    )
+
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 # ── POST /refresh ─────────────────────────────────────────────────────────────
 class RefreshRequest(BaseModel):
-    refresh_token: str
+    refresh_token: Optional[str] = None
 
 
 @router.post("/refresh", response_model=TokenResponse)
-def refresh_token(payload: RefreshRequest, request: Request, db: Session = Depends(get_db)):
-    data = decode_token(payload.refresh_token)
+def refresh_token(request: Request, response: Response, payload: Optional[RefreshRequest] = None, db: Session = Depends(get_db)):
+    ref_token = request.cookies.get("refresh_token")
+    if not ref_token and payload:
+        ref_token = payload.refresh_token
+
+    if not ref_token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                            detail={"code": "INVALID_TOKEN", "message": "Invalid or expired refresh token."})
+
+    data = decode_token(ref_token)
     if not data or data.get("type") != "refresh":
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                             detail={"code": "INVALID_TOKEN", "message": "Invalid or expired refresh token."})
@@ -246,6 +286,24 @@ def refresh_token(payload: RefreshRequest, request: Request, db: Session = Depen
     session.revoked_at = datetime.now(timezone.utc)
     access, refresh, new_session = _create_session(user, request, db)
     db.commit()
+
+    # Set new secure cookies
+    response.set_cookie(
+        key="access_token",
+        value=access,
+        httponly=True,
+        secure=settings.ENVIRONMENT == "production",
+        samesite="lax" if settings.ENVIRONMENT != "production" else "none",
+        max_age=settings.JWT_ACCESS_EXPIRE_MINUTES * 60,
+    )
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh,
+        httponly=True,
+        secure=settings.ENVIRONMENT == "production",
+        samesite="lax" if settings.ENVIRONMENT != "production" else "none",
+        max_age=settings.JWT_REFRESH_EXPIRE_DAYS * 24 * 60 * 60,
+    )
 
     return TokenResponse(
         access_token=access,
