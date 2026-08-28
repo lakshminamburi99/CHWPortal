@@ -1,14 +1,17 @@
 from pydantic import BaseModel, ConfigDict
-from typing import List, Optional, Literal
+from typing import List, Optional, Literal, Any
 from app.schemas.assessment import AssessmentAnswer, VitalsSchema
 
-RiskLevel = Literal["HIGH", "MEDIUM", "LOW"]
+RiskLevel = Literal["HIGH", "MEDIUM", "LOW", "CRITICAL"]
 CaseStatus = Literal[
     "IN_PROGRESS",
     "SUPERVISOR_REVIEW",
     "FOLLOW_UP",
     "REFERRED",
     "COMPLETED",
+    "OPEN",
+    "UNDER_REVIEW",
+    "RESOLVED",
 ]
 ReferralStatus = Literal[
     "DRAFT",
@@ -21,14 +24,14 @@ ReferralStatus = Literal[
 FollowUpStatus = Literal["DUE_TODAY", "UPCOMING", "OVERDUE", "COMPLETED"]
 
 class ProtocolResultSchema(BaseModel):
-    riskLevel: RiskLevel
-    status: Literal["REFERRAL_REQUIRED", "FOLLOW_UP_REQUIRED", "ROUTINE"]
-    reason: str
-    recommendedAction: str
-    protocolName: str
-    protocolVersion: str
-    generatedAt: str
-    triggeringFindings: List[str]
+    riskLevel: str
+    status: Optional[str] = "ROUTINE"
+    reason: Optional[str] = ""
+    recommendedAction: Optional[str] = ""
+    protocolName: Optional[str] = ""
+    protocolVersion: Optional[str] = ""
+    generatedAt: Optional[str] = ""
+    triggeringFindings: Optional[List[str]] = []
 
 class TimelineEventSchema(BaseModel):
     id: str
@@ -42,16 +45,16 @@ class CaseRecordSchema(BaseModel):
     chwId: str
     templateId: str
     templateName: str
-    riskLevel: RiskLevel
-    status: CaseStatus
+    riskLevel: str
+    status: str
     createdAt: str
     flaggedAt: Optional[str] = None
     supervisorAcknowledgedAt: Optional[str] = None
-    answers: List[AssessmentAnswer]
-    vitals: VitalsSchema
-    protocolResult: ProtocolResultSchema
-    chwNotes: str
-    timeline: List[TimelineEventSchema]
+    answers: Optional[List[Any]] = []
+    vitals: Optional[Any] = None
+    protocolResult: Optional[Any] = None
+    chwNotes: Optional[str] = ""
+    timeline: Optional[List[Any]] = []
     referralId: Optional[str] = None
     model_config = ConfigDict(from_attributes=True)
 
