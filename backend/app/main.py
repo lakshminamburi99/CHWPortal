@@ -35,6 +35,19 @@ async def lifespan(app: FastAPI):
             seed_db()
             from app.db.migrate_to_cloudsql import migrate_sqlite_to_postgres
             migrate_sqlite_to_postgres()
+            
+            # Seed 20 test patients if they do not exist
+            try:
+                from app.db.session import SessionLocal
+                from app.db.seed_test_data import seed_twenty_test_patients
+                db = SessionLocal()
+                try:
+                    seed_twenty_test_patients(db)
+                finally:
+                    db.close()
+            except Exception as test_err:
+                print(f"Failed to seed 20 test patients: {test_err}", file=sys.stderr, flush=True)
+
             print("Database initialized, seeded, and migrated successfully!", file=sys.stderr, flush=True)
             break
         except Exception as e:
