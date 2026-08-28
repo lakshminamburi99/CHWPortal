@@ -3,6 +3,7 @@ from pydantic_settings import BaseSettings
 from pydantic import field_validator
 from typing import Optional, List
 import secrets
+import os
 
 
 class Settings(BaseSettings):
@@ -13,11 +14,6 @@ class Settings(BaseSettings):
 
     # ── Database ─────────────────────────────────────────────────────────────
     DATABASE_URL: Optional[str] = None
-    POSTGRES_USER: str = "postgres"
-    POSTGRES_PASSWORD: str = "postgres"
-    POSTGRES_SERVER: str = "localhost"
-    POSTGRES_PORT: str = "5432"
-    POSTGRES_DB: str = "chw_care_db"
 
     # ── JWT ───────────────────────────────────────────────────────────────────
     JWT_SECRET: str = ""
@@ -54,32 +50,27 @@ class Settings(BaseSettings):
 
     @property
     def sync_database_url(self) -> str:
-        if self.DATABASE_URL:
-            url = self.DATABASE_URL
-            if url.startswith("postgresql://"):
-                url = url.replace("postgresql://", "postgresql+psycopg2://", 1)
-            return url
-        # If POSTGRES_SERVER is set to something non-localhost or explicitly configured via env
-        import os
-        if "DATABASE_URL" in os.environ:
-            return os.environ["DATABASE_URL"]
-        if "POSTGRES_SERVER" in os.environ and os.environ["POSTGRES_SERVER"] != "localhost":
-            import urllib.parse
-            encoded_password = urllib.parse.quote_plus(self.POSTGRES_PASSWORD) if self.POSTGRES_PASSWORD else ""
-            return (
-                f"postgresql+psycopg2://{self.POSTGRES_USER}:{encoded_password}"
-                f"@{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
-            )
-        # Default local dev fallback to SQLite for immediate out-of-the-box execution
-        from pathlib import Path
-        db_file = (Path(__file__).resolve().parent.parent / "chw_care.db").as_posix()
-        return f"sqlite:///{db_file}"
+        url = self.DATABASE_URL or os.environ.get("DATABASE_URL")
+        if not url:
+            # Check if environment is production
+            if self.ENVIRONMENT == "production":
+                raise ValueError("DATABASE_URL must be specified in production environment.")
+            
+            # Default local dev fallback to SQLite
+            from pathlib import Path
+            db_file = (Path(__file__).resolve().parent.parent / "chw_care.db").as_posix()
+            return f"sqlite:///{db_file}"
+        
+        if url.startswith("postgresql://"):
+            url = url.replace("postgresql://", "postgresql+psycopg2://", 1)
+        return url
 
     @field_validator("JWT_SECRET", mode="before")
     @classmethod
     def _require_jwt_secret(cls, v: str, info) -> str:
-        # In production, a real secret MUST be provided
         if not v:
+            if os.environ.get("ENVIRONMENT") == "production":
+                raise ValueError("JWT_SECRET must be explicitly provided in production.")
             return "CHANGE_ME_IN_PRODUCTION_" + secrets.token_urlsafe(32)
         return v
 
