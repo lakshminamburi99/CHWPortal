@@ -186,17 +186,7 @@ export const SignIn = () => {
 
         {/* Main content */}
         <div style={{ padding: '0 2.5rem 2.5rem' }}>
-          <div style={{
-            display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
-            padding: '0.3rem 0.75rem', marginBottom: '1.5rem',
-            backgroundColor: 'rgba(255,255,255,0.08)',
-            border: '1px solid rgba(255,255,255,0.12)',
-            borderRadius: '999px', fontSize: '0.72rem',
-            color: 'rgba(255,255,255,0.7)', fontWeight: 500,
-          }}>
-            <span style={{ color: '#60a5fa', fontSize: '0.8rem' }}>⚡</span>
-            Clinical protocol engine · PostgreSQL backed
-          </div>
+
 
           <h1 style={{
             fontSize: '2.4rem', fontWeight: 800, lineHeight: 1.2,
