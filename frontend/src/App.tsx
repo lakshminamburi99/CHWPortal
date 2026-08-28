@@ -54,7 +54,6 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
     // If access_token doesn't exist, we can try to fetch anyway because the cookie might be there!
     // But to support localStorage fallback, we check for either.
     const token = localStorage.getItem('access_token');
-    
     fetch(`${API_BASE}/auth/session`, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     })
