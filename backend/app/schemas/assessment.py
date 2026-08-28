@@ -23,7 +23,7 @@ class AssessmentTemplateSchema(BaseModel):
 
 class AssessmentAnswer(BaseModel):
     questionId: str
-    prompt: str
+    prompt: Optional[str] = ""
     value: str
 
 class VitalsSchema(BaseModel):
