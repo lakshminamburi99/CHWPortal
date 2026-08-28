@@ -3,6 +3,7 @@ from pydantic_settings import BaseSettings
 from pydantic import field_validator
 from typing import Optional, List
 import secrets
+import os
 
 
 class Settings(BaseSettings):
