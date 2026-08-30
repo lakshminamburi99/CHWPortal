@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { API_BASE } from './config';
-import { DeepAgentCopilot } from './components/DeepAgentCopilot';
+import { CWSTbot } from './components/CWSTbot';
 
 // ---------------------------------------------------------
 // Types
@@ -496,7 +496,7 @@ const DashboardLayout = () => (
         <Outlet />
       </main>
     </div>
-    <DeepAgentCopilot />
+    <CWSTbot />
   </div>
 );
 
