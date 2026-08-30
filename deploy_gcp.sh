@@ -113,6 +113,9 @@ FRONTEND_IMAGE="${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO_NAME}/frontend:lat
 log_info "Step 5: Deploying Backend (FastAPI) to Cloud Run..."
 DB_SOCKET_URI="postgresql://${DB_USER}:${DB_PASSWORD}@/${DB_NAME}?host=/cloudsql/${INSTANCE_CONNECTION_NAME}"
 
+GEMINI_API_KEY="${GEMINI_API_KEY:-}"
+GEMINI_MODEL="${GEMINI_MODEL:-gemini-2.5-flash}"
+
 gcloud run deploy chw-backend \
     --image="${BACKEND_IMAGE}" \
     --region="${REGION}" \
@@ -120,7 +123,7 @@ gcloud run deploy chw-backend \
     --allow-unauthenticated \
     --port=8000 \
     --add-cloudsql-instances="${INSTANCE_CONNECTION_NAME}" \
-    --set-env-vars="DATABASE_URL=${DB_SOCKET_URI},POSTGRES_USER=${DB_USER},POSTGRES_PASSWORD=${DB_PASSWORD},POSTGRES_DB=${DB_NAME},POSTGRES_SERVER=/cloudsql/${INSTANCE_CONNECTION_NAME},JWT_SECRET=${JWT_SECRET},ENVIRONMENT=production,DEMO_MODE=true" \
+    --set-env-vars="DATABASE_URL=${DB_SOCKET_URI},POSTGRES_USER=${DB_USER},POSTGRES_PASSWORD=${DB_PASSWORD},POSTGRES_DB=${DB_NAME},POSTGRES_SERVER=/cloudsql/${INSTANCE_CONNECTION_NAME},JWT_SECRET=${JWT_SECRET},ENVIRONMENT=production,DEMO_MODE=true,GEMINI_API_KEY=${GEMINI_API_KEY},GEMINI_MODEL=${GEMINI_MODEL}" \
     --project="${PROJECT_ID}"
 
 BACKEND_URL=$(gcloud run services describe chw-backend --region="${REGION}" --project="${PROJECT_ID}" --format="value(status.url)")

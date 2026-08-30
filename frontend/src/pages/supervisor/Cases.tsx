@@ -34,6 +34,8 @@ export const SupervisorCasesPage = () => {
   const [actionComment, setActionComment] = useState('');
   const [submittingAction, setSubmittingAction] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [aiSummary, setAiSummary] = useState<string | null>(null);
+  const [loadingAi, setLoadingAi] = useState(false);
 
   const fetchCasesAndPatients = async () => {
     const token = localStorage.getItem('access_token');
@@ -62,6 +64,25 @@ export const SupervisorCasesPage = () => {
     fetchCasesAndPatients();
   }, []);
 
+  const handleGenerateSummary = async (caseId: string) => {
+    setLoadingAi(true);
+    try {
+      const token = localStorage.getItem('access_token');
+      const res = await fetch(`${API_BASE}/cases/${caseId}/summarize`, {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setAiSummary(data.summary);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoadingAi(false);
+    }
+  };
+
   const handleSupervisorAction = async (actionType: string) => {
     if (!selectedCase) return;
     setSubmittingAction(true);
@@ -81,72 +102,77 @@ export const SupervisorCasesPage = () => {
       });
 
       if (res.ok) {
-        const updated = await res.json();
-        setCases(prev => prev.map(c => c.id === selectedCase.id ? updated : c));
         setSelectedCase(null);
         setActionComment('');
+        setAiSummary(null);
+        fetchCasesAndPatients();
       }
     } catch {}
     setSubmittingAction(false);
   };
 
-  const filtered = cases.filter(c => riskFilter === 'ALL' || c.riskLevel === riskFilter);
+  const filteredCases = cases.filter(c => {
+    if (riskFilter === 'ALL') return true;
+    return c.riskLevel === riskFilter;
+  });
 
   return (
-    <div>
-      <div style={{ marginBottom: '1.5rem' }}>
-        <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.25rem' }}>Supervisor Cases</h1>
-        <p style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem' }}>All cases across your CHW team requiring clinical governance</p>
-      </div>
-
-      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
-        {['ALL', 'HIGH', 'MEDIUM', 'LOW'].map(r => (
-          <Button key={r} size="sm" variant={riskFilter === r ? 'primary' : 'outline'} onClick={() => setRiskFilter(r)}>
-            {r === 'ALL' ? 'All' : `${r} risk`}
-          </Button>
-        ))}
+    <div style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+        <div>
+          <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0f172a' }}>Clinical Triage Queue</h1>
+          <p style={{ color: '#64748b', fontSize: '0.875rem' }}>Review escalated cases, assign supervisor actions, and monitor clinical risks.</p>
+        </div>
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          {['ALL', 'HIGH', 'MEDIUM', 'LOW'].map(rf => (
+            <Button
+              key={rf}
+              variant={riskFilter === rf ? 'primary' : 'outline'}
+              size="sm"
+              onClick={() => setRiskFilter(rf)}
+            >
+              {rf === 'ALL' ? 'All Risks' : `${rf} Risk`}
+            </Button>
+          ))}
+        </div>
       </div>
 
       <Card>
         <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
             <thead>
-              <tr style={{ borderBottom: '1px solid var(--color-border)', backgroundColor: 'var(--color-background)' }}>
-                {['Case ID', 'Patient', 'CHW', 'Assessment', 'Risk', 'Status', 'Date', 'Action'].map(h => (
-                  <th key={h} style={{ padding: '0.75rem 1rem', textAlign: 'left', fontWeight: 600, color: 'var(--color-text-muted)', fontSize: '0.75rem', textTransform: 'uppercase' }}>{h}</th>
-                ))}
+              <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#475569' }}>
+                <th style={{ padding: '0.875rem 1.25rem', fontWeight: 600 }}>Case ID</th>
+                <th style={{ padding: '0.875rem 1.25rem', fontWeight: 600 }}>Patient</th>
+                <th style={{ padding: '0.875rem 1.25rem', fontWeight: 600 }}>Assessment</th>
+                <th style={{ padding: '0.875rem 1.25rem', fontWeight: 600 }}>Risk Level</th>
+                <th style={{ padding: '0.875rem 1.25rem', fontWeight: 600 }}>Status</th>
+                <th style={{ padding: '0.875rem 1.25rem', fontWeight: 600, textAlign: 'right' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {filtered.map(c => {
-                const patientObj = patients[c.patientId];
-                const patientName = patientObj ? `${patientObj.firstName} ${patientObj.lastName}` : c.patientId;
-                const createdDate = c.createdAt ? new Date(c.createdAt).toLocaleDateString() : 'Recent';
-
+              {filteredCases.map(c => {
+                const p = patients[c.patientId];
+                const pName = p ? `${p.firstName} ${p.lastName}` : c.patientId;
                 return (
-                  <tr key={c.id} style={{ borderBottom: '1px solid var(--color-border)' }}>
-                    <td style={{ padding: '0.75rem 1rem', fontFamily: 'monospace', fontSize: '0.8rem', fontWeight: 600 }}>{c.id}</td>
-                    <td style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>{patientName}</td>
-                    <td style={{ padding: '0.75rem 1rem', color: 'var(--color-text-muted)' }}>{c.chwId || 'John Smith'}</td>
-                    <td style={{ padding: '0.75rem 1rem', color: 'var(--color-text-muted)' }}>{c.templateName || 'Assessment'}</td>
-                    <td style={{ padding: '0.75rem 1rem' }}><Badge variant={riskVariant[c.riskLevel] || 'default'}>{c.riskLevel}</Badge></td>
-                    <td style={{ padding: '0.75rem 1rem' }}><Badge variant={statusVariant[c.status] || 'default'}>{statusLabel[c.status] || c.status}</Badge></td>
-                    <td style={{ padding: '0.75rem 1rem', color: 'var(--color-text-muted)' }}>{createdDate}</td>
-                    <td style={{ padding: '0.75rem 1rem' }}>
-                      <Button size="sm" variant="outline" onClick={() => { setSelectedCase(c); setActionComment(''); }}>
-                        Review
+                  <tr key={c.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                    <td style={{ padding: '0.875rem 1.25rem', fontWeight: 600, color: '#0f172a' }}>{c.id}</td>
+                    <td style={{ padding: '0.875rem 1.25rem' }}>{pName}</td>
+                    <td style={{ padding: '0.875rem 1.25rem', color: '#64748b' }}>{c.templateName}</td>
+                    <td style={{ padding: '0.875rem 1.25rem' }}>
+                      <Badge variant={riskVariant[c.riskLevel] || 'default'}>{c.riskLevel}</Badge>
+                    </td>
+                    <td style={{ padding: '0.875rem 1.25rem' }}>
+                      <Badge variant={statusVariant[c.status] || 'default'}>{statusLabel[c.status] || c.status}</Badge>
+                    </td>
+                    <td style={{ padding: '0.875rem 1.25rem', textAlign: 'right' }}>
+                      <Button variant="outline" size="sm" onClick={() => { setSelectedCase(c); setAiSummary(null); setActionComment(''); }}>
+                        Review Case
                       </Button>
                     </td>
                   </tr>
                 );
               })}
-              {filtered.length === 0 && (
-                <tr>
-                  <td colSpan={8} style={{ padding: '2rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>
-                    No cases match the selected filter.
-                  </td>
-                </tr>
-              )}
             </tbody>
           </table>
         </div>
@@ -156,7 +182,7 @@ export const SupervisorCasesPage = () => {
       <Modal isOpen={!!selectedCase} onClose={() => setSelectedCase(null)} title="Supervisor Clinical Review"
         footer={<>
           <Button variant="outline" disabled={submittingAction} onClick={() => handleSupervisorAction('REQUEST_INFO')}>
-            Request info from CHW
+            Request info
           </Button>
           <Button variant="outline" disabled={submittingAction} onClick={() => handleSupervisorAction('ESCALATE')}>
             Escalate case
@@ -187,6 +213,32 @@ export const SupervisorCasesPage = () => {
                 <p style={{ fontSize: '0.75rem', color: '#64748b' }}>Assessment</p>
                 <p style={{ fontWeight: 500, fontSize: '0.85rem' }}>{selectedCase.templateName}</p>
               </div>
+            </div>
+
+            {/* AI Case Summary trigger & panel */}
+            <div style={{ marginBottom: '1.25rem', padding: '1rem', backgroundColor: '#f0fdf4', borderRadius: '8px', border: '1px solid #bbf7d0' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: aiSummary ? '0.75rem' : 0 }}>
+                <div>
+                  <h4 style={{ fontSize: '0.85rem', fontWeight: 700, color: '#166534', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    ✨ AI Clinical Supervisor Brief
+                  </h4>
+                  <span style={{ fontSize: '0.725rem', color: '#15803d' }}>Powered by Google Gemini 2.5 Flash</span>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={loadingAi}
+                  onClick={() => handleGenerateSummary(selectedCase.id)}
+                  style={{ borderColor: '#166534', color: '#166534', fontSize: '0.78rem' }}
+                >
+                  {loadingAi ? 'Generating…' : (aiSummary ? 'Refresh Brief' : 'Generate Brief')}
+                </Button>
+              </div>
+              {aiSummary && (
+                <div style={{ fontSize: '0.825rem', color: '#14532d', whiteSpace: 'pre-line', lineHeight: 1.6, backgroundColor: 'white', padding: '0.75rem', borderRadius: '6px', border: '1px solid #dcfce7' }}>
+                  {aiSummary}
+                </div>
+              )}
             </div>
 
             {/* Protocol Result & Reason */}
