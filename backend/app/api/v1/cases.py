@@ -165,3 +165,34 @@ def notify_supervisor(id: str, db: Session = Depends(get_db)):
         db.commit()
 
     return {"message": "Supervisor notified successfully"}
+
+@router.post("/{id}/summarize")
+def summarize_case_endpoint(id: str, db: Session = Depends(get_db)):
+    from app.models.patient import PatientModel
+    from app.services.ai_service import GeminiAIService
+
+    case_record = db.query(CaseRecordModel).filter(CaseRecordModel.id == id).first()
+    if not case_record:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="CASE_NOT_FOUND")
+
+    patient = db.query(PatientModel).filter(PatientModel.id == case_record.patient_id).first()
+    patient_name = f"{patient.first_name} {patient.last_name}" if patient else "Patient"
+
+    danger_flags = []
+    if case_record.protocol_result and isinstance(case_record.protocol_result, dict):
+        danger_flags = case_record.protocol_result.get("flags", [])
+
+    case_data = {
+        "patient_name": patient_name,
+        "risk_level": case_record.risk_level,
+        "danger_flags": danger_flags,
+        "vitals": case_record.vitals or {},
+        "chw_notes": case_record.chw_notes or "",
+    }
+
+    summary = GeminiAIService.summarize_case(case_data)
+    return {
+        "case_id": case_record.id,
+        "patient_name": patient_name,
+        "summary": summary
+    }

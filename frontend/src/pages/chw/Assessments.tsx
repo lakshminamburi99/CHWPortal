@@ -221,17 +221,48 @@ export const AssessmentsPage = () => {
             {question.text}
           </h2>
           {question.helpText && (
-            <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', marginBottom: '1.5rem', padding: '0.75rem', backgroundColor: 'var(--color-info-bg, #eff6ff)', borderRadius: '8px' }}>
+            <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', marginBottom: '1.25rem', padding: '0.75rem', backgroundColor: 'var(--color-info-bg, #eff6ff)', borderRadius: '8px' }}>
               💡 {question.helpText}
             </p>
           )}
+
+          {/* AI Voice Assistant trigger */}
+          <div style={{ marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={async () => {
+                try {
+                  const res = await fetch(`${API_BASE}/voice/transcribe`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ options: question.options || [] }),
+                  });
+                  if (res.ok) {
+                    const data = await res.json();
+                    if (data.suggestedOption && question.type === 'choice') {
+                      setCurrentAnswer(data.suggestedOption);
+                    } else if (data.transcript && question.type === 'text') {
+                      setCurrentAnswer(prev => prev ? `${prev} ${data.transcript}` : data.transcript);
+                    }
+                  }
+                } catch (e) {
+                  console.error(e);
+                }
+              }}
+              style={{ fontSize: '0.8rem', gap: '0.4rem', borderColor: '#3b82f6', color: '#1d4ed8' }}
+            >
+              🎤 AI Voice Assistant
+            </Button>
+            <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Powered by Google Gemini</span>
+          </div>
 
           {question.type === 'text' ? (
             <textarea
               value={currentAnswer}
               onChange={e => setCurrentAnswer(e.target.value)}
               rows={4}
-              placeholder="Type response here..."
+              placeholder="Type response here or use AI Voice Assistant..."
               style={{
                 width: '100%', border: '1px solid var(--color-border)', borderRadius: '8px',
                 padding: '0.75rem', fontSize: '0.875rem', resize: 'vertical',

@@ -100,6 +100,8 @@ jobs:
           JWT_SEC="${{ secrets.JWT_SECRET }}"
           if [ -z "$JWT_SEC" ]; then JWT_SEC="SecretJWTKeyForCWSTPlatform2026"; fi
 
+          GEMINI_KEY="${{ secrets.GEMINI_API_KEY }}"
+
           DB_URI="postgresql://postgres:${DB_PASS_ENCODED}@/${{ env.DB_NAME }}?host=/cloudsql/${CONN_NAME}"
 
           gcloud run deploy chw-backend \
@@ -109,7 +111,7 @@ jobs:
             --allow-unauthenticated \
             --port=8000 \
             --add-cloudsql-instances="$CONN_NAME" \
-            --set-env-vars="DATABASE_URL=${DB_URI},POSTGRES_USER=postgres,POSTGRES_PASSWORD=${DB_PASS},POSTGRES_DB=${{ env.DB_NAME }},POSTGRES_SERVER=/cloudsql/${CONN_NAME},JWT_SECRET=${JWT_SEC},ENVIRONMENT=production,DEMO_MODE=true"
+            --set-env-vars="DATABASE_URL=${DB_URI},POSTGRES_USER=postgres,POSTGRES_PASSWORD=${DB_PASS},POSTGRES_DB=${{ env.DB_NAME }},POSTGRES_SERVER=/cloudsql/${CONN_NAME},JWT_SECRET=${JWT_SEC},ENVIRONMENT=production,DEMO_MODE=true,GEMINI_API_KEY=${GEMINI_KEY},GEMINI_MODEL=gemini-2.5-flash"
 
       - name: Fetch Backend Production URL
         id: backend_url

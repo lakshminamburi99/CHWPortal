@@ -45,6 +45,10 @@ class Settings(BaseSettings):
     # ── Demo mode (development only) ──────────────────────────────────────────
     DEMO_MODE: bool = True
 
+    # ── Google Gemini AI ──────────────────────────────────────────────────────
+    GEMINI_API_KEY: Optional[str] = None
+    GEMINI_MODEL: str = "gemini-2.5-flash"
+
     # ── Password reset ────────────────────────────────────────────────────────
     PASSWORD_RESET_EXPIRE_MINUTES: int = 60
 
