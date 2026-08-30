@@ -87,6 +87,11 @@ jobs:
           CONN_NAME=$(gcloud sql instances describe ${{ env.DB_INSTANCE }} --format="value(connectionName)")
           echo "connection_name=$CONN_NAME" >> $GITHUB_OUTPUT
 
+      - name: Automate GCP Agent APIs & IAM Permissions
+        run: |
+          chmod +x ./setup_gcp_agent.sh
+          ./setup_gcp_agent.sh || true
+
       - name: Deploy Backend to Cloud Run
         run: |
           CONN_NAME="${{ steps.cloudsql.outputs.connection_name }}"

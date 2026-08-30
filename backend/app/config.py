@@ -49,6 +49,12 @@ class Settings(BaseSettings):
     GEMINI_API_KEY: Optional[str] = None
     GEMINI_MODEL: str = "gemini-2.5-flash"
 
+    # ── Google Cloud Vertex AI Agent ──────────────────────────────────────────
+    VERTEX_AGENT_ID: Optional[str] = None
+    VERTEX_LOCATION: str = "us-central1"
+    GCP_PROJECT_ID: Optional[str] = None
+    USE_VERTEX_AGENT: bool = True
+
     # ── Password reset ────────────────────────────────────────────────────────
     PASSWORD_RESET_EXPIRE_MINUTES: int = 60
 
