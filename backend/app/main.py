@@ -23,6 +23,8 @@ from app.api.v1.voice         import router as voice_router
 from app.api.v1.admin        import router as admin_router
 from app.api.v1.manager      import router as manager_router
 from app.api.v1.messages     import router as messages_router
+from app.api.v1.agent        import router as agent_router
+
 
 # ── Startup / Shutdown ────────────────────────────────────────────────────────
 @asynccontextmanager
@@ -140,6 +142,7 @@ app.include_router(voice_router,         prefix=f"{PREFIX}/voice",         tags=
 app.include_router(admin_router,         prefix=f"{PREFIX}/admin",         tags=["Administration"])
 app.include_router(manager_router,       prefix=f"{PREFIX}/manager",       tags=["Programme Manager"])
 app.include_router(messages_router,      prefix=f"{PREFIX}/messages",      tags=["Messaging"])
+app.include_router(agent_router,         prefix=f"{PREFIX}/agent",         tags=["GCP Deep Agent"])
 
 
 # ── Health check ──────────────────────────────────────────────────────────────

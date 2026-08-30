@@ -52,6 +52,12 @@ gcloud services enable \
     secretmanager.googleapis.com \
     --project="${PROJECT_ID}"
 
+# Run automated GCP Agent APIs & IAM provisioning
+if [ -f "./setup_gcp_agent.sh" ]; then
+    chmod +x ./setup_gcp_agent.sh
+    ./setup_gcp_agent.sh || true
+fi
+
 # ------------------------------------------------------------------------------
 # Step 2: Create Artifact Registry Repository
 # ------------------------------------------------------------------------------
