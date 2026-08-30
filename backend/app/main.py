@@ -24,6 +24,7 @@ from app.api.v1.admin        import router as admin_router
 from app.api.v1.manager      import router as manager_router
 from app.api.v1.messages     import router as messages_router
 from app.api.v1.agent        import router as agent_router
+from app.api.v1.fhir         import router as fhir_router
 
 
 # ── Startup / Shutdown ────────────────────────────────────────────────────────
@@ -143,6 +144,7 @@ app.include_router(admin_router,         prefix=f"{PREFIX}/admin",         tags=
 app.include_router(manager_router,       prefix=f"{PREFIX}/manager",       tags=["Programme Manager"])
 app.include_router(messages_router,      prefix=f"{PREFIX}/messages",      tags=["Messaging"])
 app.include_router(agent_router,         prefix=f"{PREFIX}/agent",         tags=["GCP Deep Agent"])
+app.include_router(fhir_router,          prefix=f"{PREFIX}/fhir",          tags=["HL7 FHIR R4 Interoperability"])
 
 
 # ── Health check ──────────────────────────────────────────────────────────────
