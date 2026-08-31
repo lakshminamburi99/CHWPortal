@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { useAuth } from '../../App';
+import { API_BASE } from '../../config';
 
 const templates = [
   { id: 'tpl-maternal', name: 'Maternal Health Assessment', category: 'MATERNAL', description: 'Comprehensive assessment for pregnant and post-partum women.', duration: 15 },
@@ -20,8 +21,6 @@ const assessmentQuestions = [
   { id: 'q5', text: 'Any additional clinical notes?', helpText: 'Record any observations not captured by the questions above.', type: 'text' },
 ];
 
-import { API_BASE } from '../../config';
-
 export const AssessmentsPage = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -37,7 +36,187 @@ export const AssessmentsPage = () => {
   const [currentAnswer, setCurrentAnswer] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
+  // Real-time Voice Recording & Speech-to-Text State
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingDuration, setRecordingDuration] = useState(0);
+  const [interimTranscript, setInterimTranscript] = useState('');
+  const [speechError, setSpeechError] = useState<string | null>(null);
+
+  const recognitionRef = useRef<any>(null);
+  const isRecordingRef = useRef<boolean>(false);
+  const baseAnswerRef = useRef<string>('');
+  const timerRef = useRef<any>(null);
+
+  // Clean up recognition & timers on unmount
+  useEffect(() => {
+    return () => {
+      stopRecording();
+    };
+  }, []);
+
+  // Timer effect for recording duration
+  useEffect(() => {
+    if (isRecording) {
+      setRecordingDuration(0);
+      timerRef.current = setInterval(() => {
+        setRecordingDuration(prev => prev + 1);
+      }, 1000);
+    } else {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    }
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+    };
+  }, [isRecording]);
+
+  const formatDuration = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const startRecording = () => {
+    setSpeechError(null);
+    setInterimTranscript('');
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      setSpeechError('Web Speech API is not supported in this browser. Triggering Gemini Voice Assistant.');
+      triggerGeminiVoiceAssistant();
+      return;
+    }
+
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = 'en-US';
+
+      baseAnswerRef.current = currentAnswer;
+
+      recognition.onstart = () => {
+        setIsRecording(true);
+        isRecordingRef.current = true;
+        setSpeechError(null);
+      };
+
+      recognition.onresult = (event: any) => {
+        let finalTranscript = '';
+        let interim = '';
+
+        for (let i = 0; i < event.results.length; ++i) {
+          if (event.results[i].isFinal) {
+            finalTranscript += event.results[i][0].transcript + ' ';
+          } else {
+            interim += event.results[i][0].transcript;
+          }
+        }
+
+        const fullSpoken = (finalTranscript + interim).trim();
+        setInterimTranscript(interim);
+
+        const currentQuestion = assessmentQuestions[currentQ];
+        if (currentQuestion.type === 'text') {
+          const base = baseAnswerRef.current ? baseAnswerRef.current.trim() : '';
+          const combined = base ? `${base} ${fullSpoken}` : fullSpoken;
+          setCurrentAnswer(combined);
+        } else if (currentQuestion.type === 'choice') {
+          // Real-time matching against available choice options
+          const lower = fullSpoken.toLowerCase();
+          const matched = currentQuestion.options?.find(opt =>
+            lower.includes(opt.toLowerCase()) || opt.toLowerCase().includes(lower)
+          );
+          if (matched) {
+            setCurrentAnswer(matched);
+          }
+        }
+      };
+
+      recognition.onerror = (event: any) => {
+        console.warn('Speech recognition error:', event.error);
+        if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+          setSpeechError('Microphone permission denied. Please allow microphone access in your browser.');
+          stopRecording();
+        } else if (event.error === 'no-speech') {
+          // Keep listening
+        } else {
+          setSpeechError(`Voice notice: ${event.error}. You can also type or use the Gemini AI Assistant.`);
+          stopRecording();
+        }
+      };
+
+      recognition.onend = () => {
+        if (isRecordingRef.current) {
+          try {
+            recognition.start();
+          } catch {
+            setIsRecording(false);
+            isRecordingRef.current = false;
+          }
+        } else {
+          setIsRecording(false);
+        }
+      };
+
+      recognitionRef.current = recognition;
+      recognition.start();
+    } catch (err: any) {
+      console.error('Error starting speech recognition:', err);
+      setSpeechError('Microphone access failed. Triggering AI Voice Assistant fallback.');
+      setIsRecording(false);
+      isRecordingRef.current = false;
+      triggerGeminiVoiceAssistant();
+    }
+  };
+
+  const stopRecording = () => {
+    isRecordingRef.current = false;
+    setIsRecording(false);
+    setInterimTranscript('');
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.stop();
+      } catch {}
+      recognitionRef.current = null;
+    }
+  };
+
+  const toggleVoiceRecording = () => {
+    if (isRecording) {
+      stopRecording();
+    } else {
+      startRecording();
+    }
+  };
+
+  const triggerGeminiVoiceAssistant = async () => {
+    const question = assessmentQuestions[currentQ];
+    try {
+      const res = await fetch(`${API_BASE}/voice/transcribe`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ options: question.options || [] }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.suggestedOption && question.type === 'choice') {
+          setCurrentAnswer(data.suggestedOption);
+        } else if (data.transcript && question.type === 'text') {
+          setCurrentAnswer(prev => prev ? `${prev} ${data.transcript}` : data.transcript);
+        }
+      }
+    } catch (e) {
+      console.error('Gemini Voice Assistant error:', e);
+    }
+  };
+
   const handleTemplateSelect = (t: typeof templates[0]) => {
+    stopRecording();
     setSelectedTemplate(t);
     setPhase('questions');
     setCurrentQ(0);
@@ -45,6 +224,7 @@ export const AssessmentsPage = () => {
   };
 
   const submitAssessmentToBackend = async () => {
+    stopRecording();
     setSubmitting(true);
     try {
       const token = localStorage.getItem('access_token');
@@ -73,6 +253,7 @@ export const AssessmentsPage = () => {
   };
 
   const handleNext = () => {
+    stopRecording();
     const updated = { ...answers };
     if (currentAnswer) {
       updated[assessmentQuestions[currentQ].id] = currentAnswer;
@@ -88,6 +269,7 @@ export const AssessmentsPage = () => {
   };
 
   const handleBack = () => {
+    stopRecording();
     if (currentQ > 0) {
       setCurrentQ(prev => prev - 1);
       setCurrentAnswer(answers[assessmentQuestions[currentQ - 1].id] || '');
@@ -231,28 +413,10 @@ export const AssessmentsPage = () => {
             <Button
               variant="outline"
               size="sm"
-              onClick={async () => {
-                try {
-                  const res = await fetch(`${API_BASE}/voice/transcribe`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ options: question.options || [] }),
-                  });
-                  if (res.ok) {
-                    const data = await res.json();
-                    if (data.suggestedOption && question.type === 'choice') {
-                      setCurrentAnswer(data.suggestedOption);
-                    } else if (data.transcript && question.type === 'text') {
-                      setCurrentAnswer(prev => prev ? `${prev} ${data.transcript}` : data.transcript);
-                    }
-                  }
-                } catch (e) {
-                  console.error(e);
-                }
-              }}
+              onClick={triggerGeminiVoiceAssistant}
               style={{ fontSize: '0.8rem', gap: '0.4rem', borderColor: '#3b82f6', color: '#1d4ed8' }}
             >
-              🎤 AI Voice Assistant
+              ✨ AI Voice Simulation (Gemini)
             </Button>
             <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Powered by Google Gemini</span>
           </div>
@@ -262,11 +426,19 @@ export const AssessmentsPage = () => {
               value={currentAnswer}
               onChange={e => setCurrentAnswer(e.target.value)}
               rows={4}
-              placeholder="Type response here or use AI Voice Assistant..."
+              placeholder={isRecording ? "Listening to your voice in real-time..." : "Type response here or tap the microphone below to speak..."}
               style={{
-                width: '100%', border: '1px solid var(--color-border)', borderRadius: '8px',
-                padding: '0.75rem', fontSize: '0.875rem', resize: 'vertical',
-                outline: 'none', fontFamily: 'inherit',
+                width: '100%',
+                border: isRecording ? '2px solid #ef4444' : '1px solid var(--color-border)',
+                borderRadius: '8px',
+                padding: '0.75rem',
+                fontSize: '0.875rem',
+                resize: 'vertical',
+                outline: 'none',
+                fontFamily: 'inherit',
+                backgroundColor: isRecording ? '#fffafa' : 'white',
+                transition: 'all 200ms ease',
+                boxShadow: isRecording ? '0 0 0 3px rgba(239, 68, 68, 0.15)' : 'none',
               }}
             />
           ) : (
@@ -290,19 +462,91 @@ export const AssessmentsPage = () => {
             </div>
           )}
 
-          {/* Voice input mock */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '1.5rem', paddingTop: '1.25rem', borderTop: '1px solid var(--color-border)' }}>
-            <button
-              style={{
-                width: '40px', height: '40px', borderRadius: '50%',
-                backgroundColor: 'var(--color-primary, #0f172a)', color: 'white',
-                border: 'none', cursor: 'pointer', fontSize: '1.1rem',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}
-            >
-              🎤
-            </button>
-            <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>Tap to record voice response</span>
+          {/* Real-time Voice Input Button & Controls */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem', marginTop: '1.5rem', paddingTop: '1.25rem', borderTop: '1px solid var(--color-border)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
+              <button
+                onClick={toggleVoiceRecording}
+                type="button"
+                style={{
+                  width: '46px',
+                  height: '46px',
+                  borderRadius: '50%',
+                  backgroundColor: isRecording ? '#ef4444' : 'var(--color-primary, #0f172a)',
+                  color: 'white',
+                  border: isRecording ? '3px solid #fecaca' : 'none',
+                  cursor: 'pointer',
+                  fontSize: '1.25rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 200ms ease',
+                  boxShadow: isRecording ? '0 0 0 4px rgba(239, 68, 68, 0.35), 0 4px 12px rgba(239, 68, 68, 0.4)' : 'var(--shadow-sm)',
+                  transform: isRecording ? 'scale(1.05)' : 'scale(1)',
+                }}
+                title={isRecording ? 'Click to stop recording' : 'Click to start real-time voice recording'}
+              >
+                {isRecording ? '⏹️' : '🎤'}
+              </button>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span style={{ fontSize: '0.875rem', fontWeight: 600, color: isRecording ? '#dc2626' : 'var(--color-foreground, #0f172a)' }}>
+                    {isRecording ? '🔴 Listening... speak into microphone' : 'Tap to record voice response'}
+                  </span>
+                  {isRecording && (
+                    <span style={{
+                      fontSize: '0.75rem',
+                      padding: '0.15rem 0.5rem',
+                      backgroundColor: '#fee2e2',
+                      color: '#991b1b',
+                      borderRadius: '9999px',
+                      fontWeight: 700,
+                      fontFamily: 'monospace',
+                    }}>
+                      {formatDuration(recordingDuration)}
+                    </span>
+                  )}
+                </div>
+                <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
+                  {isRecording
+                    ? 'Real-time speech-to-text converts directly into the message box above. Tap button again when done.'
+                    : 'Click microphone to dictate response in real time.'}
+                </span>
+              </div>
+            </div>
+
+            {/* Live Streaming Transcript Feedback Banner */}
+            {isRecording && (
+              <div style={{
+                padding: '0.625rem 0.875rem',
+                backgroundColor: '#fef2f2',
+                border: '1px dashed #fca5a5',
+                borderRadius: '6px',
+                fontSize: '0.8rem',
+                color: '#991b1b',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+              }}>
+                <span>🎙️</span>
+                <span>
+                  <strong>Live Stream:</strong> {currentAnswer || interimTranscript || 'Listening for your voice...'}
+                </span>
+              </div>
+            )}
+
+            {speechError && (
+              <div style={{
+                padding: '0.5rem 0.75rem',
+                backgroundColor: '#fffbeb',
+                border: '1px solid #fde68a',
+                borderRadius: '6px',
+                fontSize: '0.775rem',
+                color: '#92400e',
+              }}>
+                ⚠️ {speechError}
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -318,3 +562,4 @@ export const AssessmentsPage = () => {
     </div>
   );
 };
+
