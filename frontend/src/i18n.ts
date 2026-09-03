@@ -5,28 +5,28 @@ import { initReactI18next } from 'react-i18next';
 const resources = {
   en: {
     translation: {
-      "app_name": "CHW Care",
+      "app_name": "Care Compass",
       "sign_in": "Sign in",
       "demo_accounts": "Use a demo account to explore the full platform.",
     }
   },
   es: {
     translation: {
-      "app_name": "CHW Care",
+      "app_name": "Care Compass",
       "sign_in": "Iniciar sesión",
       "demo_accounts": "Use una cuenta de demostración para explorar la plataforma completa.",
     }
   },
   ar: {
     translation: {
-      "app_name": "CHW Care",
+      "app_name": "Care Compass",
       "sign_in": "تسجيل الدخول",
       "demo_accounts": "استخدم حسابًا تجريبيًا لاستكشاف المنصة الكاملة.",
     }
   },
   hi: {
     translation: {
-      "app_name": "CHW Care",
+      "app_name": "Care Compass",
       "sign_in": "साइन इन करें",
       "demo_accounts": "पूर्ण मंच का पता लगाने के लिए एक डेमो खाते का उपयोग करें।",
     }

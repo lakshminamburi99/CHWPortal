@@ -17,9 +17,10 @@ const HelpIcon = () => (
   </svg>
 );
 
-const ShieldIcon = () => (
+const CompassIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+    <circle cx="12" cy="12" r="10" />
+    <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" fill="currentColor" fillOpacity="0.25" />
   </svg>
 );
 
@@ -166,18 +167,20 @@ export const SignIn = () => {
         overflow: 'hidden',
       }}>
         {/* Top branding */}
-        <div style={{ padding: '1.75rem 2rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+        <div style={{ padding: '1.75rem 2rem', display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
           <div style={{
-            width: '32px', height: '32px',
-            backgroundColor: 'rgba(255,255,255,0.12)',
+            width: '34px', height: '34px',
+            backgroundColor: 'rgba(56, 189, 248, 0.15)',
+            border: '1px solid rgba(56, 189, 248, 0.3)',
             borderRadius: '8px',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: '#38bdf8',
           }}>
-            <ShieldIcon />
+            <CompassIcon />
           </div>
           <div>
-            <div style={{ fontWeight: 700, fontSize: '1rem', lineHeight: 1.2 }}>CHW Care</div>
-            <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.45)', lineHeight: 1 }}>Community health worker support platform</div>
+            <div style={{ fontWeight: 700, fontSize: '1.05rem', lineHeight: 1.2, color: 'white' }}>Care Compass</div>
+            <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1 }}>Community health worker support platform</div>
           </div>
         </div>
 

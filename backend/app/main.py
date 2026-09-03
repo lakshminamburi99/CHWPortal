@@ -1,5 +1,5 @@
 """
-CHW Care Platform — FastAPI application entry point.
+Care Compass — FastAPI application entry point.
 """
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request

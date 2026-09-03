@@ -644,7 +644,7 @@ const comprehensiveLessons: TrainingLesson[] = [
         points: [
           'Respectful Greeting: Greet the patient and family using local cultural norms and titles of respect.',
           'Active Listening: Give undivided attention, maintain culturally appropriate eye contact, and avoid interrupting.',
-          'Language Concordance: Communicate in the patient\'s primary preferred language (or utilize the portal\'s multilingual translation tools).',
+          'Language Concordance: Communicate in the patient\'s primary preferred language (or utilize Care Compass\'s multilingual translation tools).',
           'Open-Ended Questions: Use "Tell me about..." or "What concerns you most?" instead of yes/no interrogation.',
         ],
         keyPoint: 'Patients who feel respected and heard are 3x more likely to follow clinical referral recommendations.',

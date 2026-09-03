@@ -1,8 +1,8 @@
-# AUTHENTICATION.md — CHW Care Platform
+# AUTHENTICATION.md — Care Compass Platform
 
 ## Overview
 
-The CHW Care Platform uses **JWT-based stateless authentication** combined with **server-side session tracking** to provide both scalability and the ability to immediately revoke sessions.
+The Care Compass Platform uses **JWT-based stateless authentication** combined with **server-side session tracking** to provide both scalability and the ability to immediately revoke sessions.
 
 ---
 
