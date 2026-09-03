@@ -8,7 +8,7 @@ import os
 
 class Settings(BaseSettings):
     # ── Project ─────────────────────────────────────────────────────────────
-    PROJECT_NAME: str = "CHW Care Platform"
+    PROJECT_NAME: str = "Care Compass"
     API_V1_STR: str = "/api/v1"
     ENVIRONMENT: str = "development"          # development | testing | production
 

@@ -284,6 +284,13 @@ const roleBadgeLabel: Record<Role, string> = {
   SUPER_ADMIN: 'SUPER ADMINISTRATOR',
 };
 
+const CompassLogoIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10" />
+    <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" fill="currentColor" fillOpacity="0.3" />
+  </svg>
+);
+
 // ---------------------------------------------------------
 // Sidebar Component
 // ---------------------------------------------------------
@@ -308,11 +315,20 @@ const Sidebar = () => {
     }}>
       {/* Brand */}
       <div style={{ padding: '1.25rem 1.25rem 1rem', borderBottom: '1px solid var(--sidebar-border)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-          <div style={{ width: '28px', height: '28px', borderRadius: '6px', backgroundColor: 'var(--sidebar-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem' }}>⚕️</div>
-          <div style={{ fontWeight: 700, fontSize: '1.05rem', color: 'var(--sidebar-foreground)' }}>CHW Care</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.25rem' }}>
+          <div style={{
+            width: '30px', height: '30px',
+            borderRadius: '8px',
+            backgroundColor: 'var(--sidebar-primary)',
+            color: 'var(--sidebar-primary-foreground)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+          }}>
+            <CompassLogoIcon />
+          </div>
+          <div style={{ fontWeight: 700, fontSize: '1.05rem', color: 'var(--sidebar-foreground)', letterSpacing: '-0.01em' }}>Care Compass</div>
         </div>
-        <div style={{ fontSize: '0.67rem', color: 'rgba(255,255,255,0.4)', paddingLeft: '36px' }}>
+        <div style={{ fontSize: '0.67rem', color: 'rgba(255,255,255,0.45)', paddingLeft: '38px' }}>
           Community health worker support platform
         </div>
         <div style={{

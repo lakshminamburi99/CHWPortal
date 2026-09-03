@@ -1,8 +1,8 @@
-# AUTHORIZATION.md — CHW Care Platform
+# AUTHORIZATION.md — Care Compass Platform
 
 ## Overview
 
-Authorization in the CHW Care Platform is enforced at **two distinct layers**:
+Authorization in the Care Compass Platform is enforced at **two distinct layers**:
 
 1. **Permission-based authorization (RBAC)** — What actions a user is allowed to perform.
 2. **Data-scope authorization** — Which specific organization units, teams, or patient records the user can access.

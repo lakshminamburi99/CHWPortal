@@ -262,7 +262,7 @@ export const SettingsPage = () => {
           Platform settings
         </h1>
         <p style={{ color: 'var(--muted-foreground)', fontSize: '0.875rem' }}>
-          Global configuration for the CHW Care platform. Changes apply to all regions and users.
+          Global configuration for the Care Compass platform. Changes apply to all regions and users.
         </p>
       </div>
 
