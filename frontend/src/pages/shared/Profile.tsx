@@ -4,10 +4,11 @@ import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
+import { supportedLanguages } from '../../utils/languages';
 
 export const ProfilePage = () => {
   const { user, login } = useAuth();
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   const [fullName, setFullName] = useState(user?.name || 'John Smith');
   const [email, setEmail] = useState(user?.email || 'demo-chw@example.com');
@@ -73,7 +74,7 @@ export const ProfilePage = () => {
       i18n.changeLanguage(language);
     }
 
-    setToast('Profile and clinical preferences updated successfully! ✓');
+    setToast(t('common.success') || 'Profile and clinical preferences updated successfully! ✓');
     setTimeout(() => setToast(''), 3500);
   };
 
@@ -110,8 +111,12 @@ export const ProfilePage = () => {
     <div style={{ maxWidth: '860px', margin: '0 auto' }}>
       {/* Header */}
       <div style={{ marginBottom: '1.5rem' }}>
-        <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.25rem' }}>User Profile & Settings</h1>
-        <p style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem' }}>Manage your personal credentials, operational scope, and field preferences</p>
+        <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.25rem' }}>
+          {t('profile.title')}
+        </h1>
+        <p style={{ color: 'var(--muted-foreground)', fontSize: '0.875rem' }}>
+          {t('profile.subtitle')}
+        </p>
       </div>
 
       {toast && (
@@ -121,12 +126,12 @@ export const ProfilePage = () => {
       )}
 
       {/* Identity Card */}
-      <Card style={{ marginBottom: '1.5rem', background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)' }}>
+      <Card style={{ marginBottom: '1.5rem', background: 'linear-gradient(135deg, var(--card) 0%, var(--muted) 100%)' }}>
         <CardContent style={{ padding: '1.75rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
             <div style={{
               width: '80px', height: '80px', borderRadius: '50%',
-              backgroundColor: 'var(--color-primary)', color: 'white',
+              backgroundColor: 'var(--primary)', color: 'var(--primary-foreground)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontWeight: 800, fontSize: '1.75rem',
               boxShadow: '0 4px 10px rgba(14, 116, 144, 0.25)',
@@ -136,14 +141,14 @@ export const ProfilePage = () => {
             <div style={{ flex: 1, minWidth: '220px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem', flexWrap: 'wrap' }}>
                 <h2 style={{ fontSize: '1.35rem', fontWeight: 800, margin: 0 }}>{fullName}</h2>
-                <Badge variant="success">Active Verified</Badge>
-                <Badge variant="info">{(user?.role || 'CHW').replace('_', ' ')}</Badge>
+                <Badge variant="success">{t('common.online')}</Badge>
+                <Badge variant="info">{t(`roles.${user?.role || 'CHW'}`)}</Badge>
               </div>
-              <p style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem', marginBottom: '0.5rem' }}>{email}</p>
-              <div style={{ display: 'flex', gap: '1rem', fontSize: '0.75rem', color: 'var(--color-text-muted)', flexWrap: 'wrap' }}>
-                <span><strong>Staff ID:</strong> {staffId}</span>
-                <span><strong>Unit:</strong> {clinic}</span>
-                <span><strong>Region:</strong> {district}</span>
+              <p style={{ color: 'var(--muted-foreground)', fontSize: '0.875rem', marginBottom: '0.5rem' }}>{email}</p>
+              <div style={{ display: 'flex', gap: '1rem', fontSize: '0.75rem', color: 'var(--muted-foreground)', flexWrap: 'wrap' }}>
+                <span><strong>{t('profile.staff_id')}:</strong> {staffId}</span>
+                <span><strong>{t('profile.clinic')}:</strong> {clinic}</span>
+                <span><strong>{t('profile.district')}:</strong> {district}</span>
               </div>
             </div>
           </div>
@@ -151,12 +156,12 @@ export const ProfilePage = () => {
       </Card>
 
       {/* Navigation Tabs */}
-      <div style={{ display: 'flex', gap: '0.5rem', borderBottom: '1px solid var(--color-border)', marginBottom: '1.5rem' }}>
+      <div style={{ display: 'flex', gap: '0.5rem', borderBottom: '1px solid var(--border)', marginBottom: '1.5rem' }}>
         {[
-          { id: 'profile', label: '👤 Account & Demographics' },
-          { id: 'preferences', label: '⚙️ Field & App Preferences' },
-          { id: 'security', label: '🔒 Security & MFA' },
-          { id: 'activity', label: '📊 Clinical Activity' },
+          { id: 'profile', label: `👤 ${t('profile.tab_account')}` },
+          { id: 'preferences', label: `⚙️ ${t('profile.tab_preferences')}` },
+          { id: 'security', label: `🔒 ${t('profile.tab_security')}` },
+          { id: 'activity', label: `📊 ${t('profile.tab_activity')}` },
         ].map(tab => (
           <button
             key={tab.id}
@@ -167,8 +172,8 @@ export const ProfilePage = () => {
               fontWeight: 600,
               background: 'transparent',
               border: 'none',
-              borderBottom: activeTab === tab.id ? '2px solid var(--color-primary)' : '2px solid transparent',
-              color: activeTab === tab.id ? 'var(--color-primary)' : 'var(--color-text-muted)',
+              borderBottom: activeTab === tab.id ? '2px solid var(--primary)' : '2px solid transparent',
+              color: activeTab === tab.id ? 'var(--primary)' : 'var(--muted-foreground)',
               cursor: 'pointer',
               transition: 'all 0.15s ease',
             }}
@@ -182,70 +187,84 @@ export const ProfilePage = () => {
       {activeTab === 'profile' && (
         <Card>
           <CardHeader>
-            <CardTitle style={{ fontSize: '1.1rem' }}>Personal & Workplace Information</CardTitle>
+            <CardTitle style={{ fontSize: '1.1rem' }}>{t('profile.personal_info')}</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSaveProfile} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
                 <div>
-                  <label style={{ fontSize: '0.85rem', fontWeight: 600, display: 'block', marginBottom: '0.35rem' }}>Full Name</label>
+                  <label style={{ fontSize: '0.85rem', fontWeight: 600, display: 'block', marginBottom: '0.35rem' }}>
+                    {t('profile.full_name')}
+                  </label>
                   <input
                     required
                     value={fullName}
                     onChange={e => setFullName(e.target.value)}
-                    style={{ width: '100%', height: '40px', border: '1px solid var(--color-border)', borderRadius: '8px', padding: '0 0.75rem', fontSize: '0.875rem' }}
+                    style={{ width: '100%', height: '40px', border: '1px solid var(--border)', borderRadius: '8px', padding: '0 0.75rem', fontSize: '0.875rem', backgroundColor: 'var(--card)', color: 'var(--foreground)' }}
                   />
                 </div>
                 <div>
-                  <label style={{ fontSize: '0.85rem', fontWeight: 600, display: 'block', marginBottom: '0.35rem' }}>Email Address</label>
+                  <label style={{ fontSize: '0.85rem', fontWeight: 600, display: 'block', marginBottom: '0.35rem' }}>
+                    {t('profile.email')}
+                  </label>
                   <input
                     type="email"
                     required
                     value={email}
                     onChange={e => setEmail(e.target.value)}
-                    style={{ width: '100%', height: '40px', border: '1px solid var(--color-border)', borderRadius: '8px', padding: '0 0.75rem', fontSize: '0.875rem' }}
+                    style={{ width: '100%', height: '40px', border: '1px solid var(--border)', borderRadius: '8px', padding: '0 0.75rem', fontSize: '0.875rem', backgroundColor: 'var(--card)', color: 'var(--foreground)' }}
                   />
                 </div>
                 <div>
-                  <label style={{ fontSize: '0.85rem', fontWeight: 600, display: 'block', marginBottom: '0.35rem' }}>Contact Phone</label>
+                  <label style={{ fontSize: '0.85rem', fontWeight: 600, display: 'block', marginBottom: '0.35rem' }}>
+                    {t('profile.phone')}
+                  </label>
                   <input
                     value={phone}
                     onChange={e => setPhone(e.target.value)}
                     placeholder="+254 700 000 000"
-                    style={{ width: '100%', height: '40px', border: '1px solid var(--color-border)', borderRadius: '8px', padding: '0 0.75rem', fontSize: '0.875rem' }}
+                    style={{ width: '100%', height: '40px', border: '1px solid var(--border)', borderRadius: '8px', padding: '0 0.75rem', fontSize: '0.875rem', backgroundColor: 'var(--card)', color: 'var(--foreground)' }}
                   />
                 </div>
                 <div>
-                  <label style={{ fontSize: '0.85rem', fontWeight: 600, display: 'block', marginBottom: '0.35rem' }}>Staff ID / Worker ID</label>
+                  <label style={{ fontSize: '0.85rem', fontWeight: 600, display: 'block', marginBottom: '0.35rem' }}>
+                    {t('profile.staff_id')}
+                  </label>
                   <input
                     disabled
                     value={staffId}
-                    style={{ width: '100%', height: '40px', border: '1px solid var(--color-border)', borderRadius: '8px', padding: '0 0.75rem', fontSize: '0.875rem', backgroundColor: '#f1f5f9', color: '#64748b' }}
+                    style={{ width: '100%', height: '40px', border: '1px solid var(--border)', borderRadius: '8px', padding: '0 0.75rem', fontSize: '0.875rem', backgroundColor: 'var(--muted)', color: 'var(--muted-foreground)' }}
                   />
                 </div>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
                 <div>
-                  <label style={{ fontSize: '0.85rem', fontWeight: 600, display: 'block', marginBottom: '0.35rem' }}>Assigned Operational District</label>
+                  <label style={{ fontSize: '0.85rem', fontWeight: 600, display: 'block', marginBottom: '0.35rem' }}>
+                    {t('profile.district')}
+                  </label>
                   <input
                     value={district}
                     onChange={e => setDistrict(e.target.value)}
-                    style={{ width: '100%', height: '40px', border: '1px solid var(--color-border)', borderRadius: '8px', padding: '0 0.75rem', fontSize: '0.875rem' }}
+                    style={{ width: '100%', height: '40px', border: '1px solid var(--border)', borderRadius: '8px', padding: '0 0.75rem', fontSize: '0.875rem', backgroundColor: 'var(--card)', color: 'var(--foreground)' }}
                   />
                 </div>
                 <div>
-                  <label style={{ fontSize: '0.85rem', fontWeight: 600, display: 'block', marginBottom: '0.35rem' }}>Primary Health Clinic / Facility</label>
+                  <label style={{ fontSize: '0.85rem', fontWeight: 600, display: 'block', marginBottom: '0.35rem' }}>
+                    {t('profile.clinic')}
+                  </label>
                   <input
                     value={clinic}
                     onChange={e => setClinic(e.target.value)}
-                    style={{ width: '100%', height: '40px', border: '1px solid var(--color-border)', borderRadius: '8px', padding: '0 0.75rem', fontSize: '0.875rem' }}
+                    style={{ width: '100%', height: '40px', border: '1px solid var(--border)', borderRadius: '8px', padding: '0 0.75rem', fontSize: '0.875rem', backgroundColor: 'var(--card)', color: 'var(--foreground)' }}
                   />
                 </div>
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
-                <Button type="submit" variant="primary">Save profile details</Button>
+                <Button type="submit" variant="primary">
+                  {t('profile.save_profile')}
+                </Button>
               </div>
             </form>
           </CardContent>
@@ -256,35 +275,40 @@ export const ProfilePage = () => {
       {activeTab === 'preferences' && (
         <Card>
           <CardHeader>
-            <CardTitle style={{ fontSize: '1.1rem' }}>Field & Clinical Preferences</CardTitle>
+            <CardTitle style={{ fontSize: '1.1rem' }}>{t('profile.field_prefs')}</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSaveProfile} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
               <div>
-                <label style={{ fontSize: '0.85rem', fontWeight: 600, display: 'block', marginBottom: '0.35rem' }}>Interface Language</label>
+                <label style={{ fontSize: '0.85rem', fontWeight: 600, display: 'block', marginBottom: '0.35rem' }}>
+                  {t('profile.language')}
+                </label>
                 <select
                   value={language}
                   onChange={e => setLanguage(e.target.value)}
-                  style={{ width: '100%', maxWidth: '320px', height: '40px', border: '1px solid var(--color-border)', borderRadius: '8px', padding: '0 0.75rem', fontSize: '0.875rem', backgroundColor: 'white' }}
+                  style={{ width: '100%', maxWidth: '320px', height: '40px', border: '1px solid var(--border)', borderRadius: '8px', padding: '0 0.75rem', fontSize: '0.875rem', backgroundColor: 'var(--card)', color: 'var(--foreground)' }}
                 >
-                  <option value="en">English (Default)</option>
-                  <option value="es">Español (Spanish)</option>
-                  <option value="ar">العربية (Arabic - RTL)</option>
-                  <option value="hi">हिन्दी (Hindi)</option>
+                  {supportedLanguages.map(l => (
+                    <option key={l.code} value={l.code}>
+                      {l.nativeName} ({l.name})
+                    </option>
+                  ))}
                 </select>
-                <p style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: '0.35rem' }}>
-                  Switches all clinical assessment templates and navigation text to selected locale.
+                <p style={{ fontSize: '0.75rem', color: 'var(--muted-foreground)', marginTop: '0.35rem' }}>
+                  {t('profile.language_sub')}
                 </p>
               </div>
 
-              <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: '1.25rem' }}>
-                <h3 style={{ fontSize: '0.95rem', fontWeight: 700, marginBottom: '1rem' }}>Field Tools & Offline Controls</h3>
+              <div style={{ borderTop: '1px solid var(--border)', paddingTop: '1.25rem' }}>
+                <h3 style={{ fontSize: '0.95rem', fontWeight: 700, marginBottom: '1rem' }}>
+                  {t('profile.field_prefs')}
+                </h3>
                 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                   <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
                     <div>
-                      <div style={{ fontWeight: 600, fontSize: '0.875rem' }}>🎙️ Enable Voice Clinical Dictation</div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>Allows speech-to-text recording during patient vitals and assessment intake.</div>
+                      <div style={{ fontWeight: 600, fontSize: '0.875rem' }}>🎙️ {t('profile.voice_dictation')}</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--muted-foreground)' }}>{t('profile.voice_dictation_sub')}</div>
                     </div>
                     <input
                       type="checkbox"
@@ -296,8 +320,8 @@ export const ProfilePage = () => {
 
                   <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
                     <div>
-                      <div style={{ fontWeight: 600, fontSize: '0.875rem' }}>🔄 Background Offline Data Sync</div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>Automatically stores assessments locally when cellular connectivity is intermittent.</div>
+                      <div style={{ fontWeight: 600, fontSize: '0.875rem' }}>🔄 {t('profile.offline_sync')}</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--muted-foreground)' }}>{t('profile.offline_sync_sub')}</div>
                     </div>
                     <input
                       type="checkbox"
@@ -309,8 +333,8 @@ export const ProfilePage = () => {
 
                   <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
                     <div>
-                      <div style={{ fontWeight: 600, fontSize: '0.875rem' }}>🔊 Protocol Audio Read-Back</div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>Reads critical protocol emergency advice aloud in the selected language.</div>
+                      <div style={{ fontWeight: 600, fontSize: '0.875rem' }}>🔊 {t('profile.audio_readback')}</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--muted-foreground)' }}>{t('profile.audio_readback_sub')}</div>
                     </div>
                     <input
                       type="checkbox"
@@ -323,7 +347,9 @@ export const ProfilePage = () => {
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                <Button type="submit" variant="primary">Save preferences</Button>
+                <Button type="submit" variant="primary">
+                  {t('profile.save_preferences')}
+                </Button>
               </div>
             </form>
           </CardContent>
@@ -336,7 +362,7 @@ export const ProfilePage = () => {
           {/* MFA Management Card */}
           <Card>
             <CardHeader>
-              <CardTitle style={{ fontSize: '1.1rem' }}>Multi-Factor Authentication (MFA)</CardTitle>
+              <CardTitle style={{ fontSize: '1.1rem' }}>{t('profile.mfa_title')}</CardTitle>
             </CardHeader>
             <CardContent>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
@@ -345,8 +371,8 @@ export const ProfilePage = () => {
                     <span style={{ fontWeight: 700, fontSize: '0.95rem' }}>Status:</span>
                     <Badge variant={mfaEnabled ? 'success' : 'default'}>{mfaEnabled ? 'Enabled' : 'Disabled'}</Badge>
                   </div>
-                  <p style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', margin: 0 }}>
-                    Enhance login security by requiring an SMS or authenticator code.
+                  <p style={{ fontSize: '0.8rem', color: 'var(--muted-foreground)', margin: 0 }}>
+                    {t('profile.mfa_desc')}
                   </p>
                 </div>
                 <Button variant={mfaEnabled ? 'outline' : 'primary'} onClick={toggleMfa}>
@@ -359,7 +385,7 @@ export const ProfilePage = () => {
           {/* Change Password Card */}
           <Card>
             <CardHeader>
-              <CardTitle style={{ fontSize: '1.1rem' }}>Update Password</CardTitle>
+              <CardTitle style={{ fontSize: '1.1rem' }}>{t('profile.change_password')}</CardTitle>
             </CardHeader>
             <CardContent>
               {passwordToast && (
@@ -369,39 +395,47 @@ export const ProfilePage = () => {
               )}
               <form onSubmit={handlePasswordChange} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxWidth: '420px' }}>
                 <div>
-                  <label style={{ fontSize: '0.85rem', fontWeight: 600, display: 'block', marginBottom: '0.35rem' }}>Current Password</label>
+                  <label style={{ fontSize: '0.85rem', fontWeight: 600, display: 'block', marginBottom: '0.35rem' }}>
+                    {t('profile.current_password')}
+                  </label>
                   <input
                     type="password"
                     required
                     value={currentPassword}
                     onChange={e => setCurrentPassword(e.target.value)}
                     placeholder="••••••••"
-                    style={{ width: '100%', height: '40px', border: '1px solid var(--color-border)', borderRadius: '8px', padding: '0 0.75rem', fontSize: '0.875rem' }}
+                    style={{ width: '100%', height: '40px', border: '1px solid var(--border)', borderRadius: '8px', padding: '0 0.75rem', fontSize: '0.875rem', backgroundColor: 'var(--card)', color: 'var(--foreground)' }}
                   />
                 </div>
                 <div>
-                  <label style={{ fontSize: '0.85rem', fontWeight: 600, display: 'block', marginBottom: '0.35rem' }}>New Password</label>
+                  <label style={{ fontSize: '0.85rem', fontWeight: 600, display: 'block', marginBottom: '0.35rem' }}>
+                    {t('profile.new_password')}
+                  </label>
                   <input
                     type="password"
                     required
                     value={newPassword}
                     onChange={e => setNewPassword(e.target.value)}
                     placeholder="At least 4 characters"
-                    style={{ width: '100%', height: '40px', border: '1px solid var(--color-border)', borderRadius: '8px', padding: '0 0.75rem', fontSize: '0.875rem' }}
+                    style={{ width: '100%', height: '40px', border: '1px solid var(--border)', borderRadius: '8px', padding: '0 0.75rem', fontSize: '0.875rem', backgroundColor: 'var(--card)', color: 'var(--foreground)' }}
                   />
                 </div>
                 <div>
-                  <label style={{ fontSize: '0.85rem', fontWeight: 600, display: 'block', marginBottom: '0.35rem' }}>Confirm New Password</label>
+                  <label style={{ fontSize: '0.85rem', fontWeight: 600, display: 'block', marginBottom: '0.35rem' }}>
+                    {t('profile.confirm_password')}
+                  </label>
                   <input
                     type="password"
                     required
                     value={confirmPassword}
                     onChange={e => setConfirmPassword(e.target.value)}
                     placeholder="Repeat new password"
-                    style={{ width: '100%', height: '40px', border: '1px solid var(--color-border)', borderRadius: '8px', padding: '0 0.75rem', fontSize: '0.875rem' }}
+                    style={{ width: '100%', height: '40px', border: '1px solid var(--border)', borderRadius: '8px', padding: '0 0.75rem', fontSize: '0.875rem', backgroundColor: 'var(--card)', color: 'var(--foreground)' }}
                   />
                 </div>
-                <Button type="submit" variant="primary" style={{ alignSelf: 'flex-start' }}>Update password</Button>
+                <Button type="submit" variant="primary" style={{ alignSelf: 'flex-start' }}>
+                  {t('profile.update_password')}
+                </Button>
               </form>
             </CardContent>
           </Card>
@@ -413,16 +447,16 @@ export const ProfilePage = () => {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
             {[
-              { label: 'REGISTERED PATIENTS', value: '50', sub: 'In primary caseload' },
+              { label: t('dashboard.kpi_assigned_patients'), value: '50', sub: 'In primary caseload' },
               { label: 'ASSESSMENTS COMPLETED', value: '142', sub: 'Protocol evaluated' },
               { label: 'REFERRALS DISPATCHED', value: '18', sub: 'To specialist clinics' },
               { label: 'TRAINING COMPLETION', value: '85%', sub: 'Accredited score' },
             ].map(kpi => (
               <Card key={kpi.label}>
                 <CardContent style={{ padding: '1.25rem' }}>
-                  <p style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--color-text-muted)', marginBottom: '0.25rem' }}>{kpi.label}</p>
+                  <p style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--muted-foreground)', marginBottom: '0.25rem' }}>{kpi.label}</p>
                   <p style={{ fontSize: '1.75rem', fontWeight: 800 }}>{kpi.value}</p>
-                  <p style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>{kpi.sub}</p>
+                  <p style={{ fontSize: '0.75rem', color: 'var(--muted-foreground)' }}>{kpi.sub}</p>
                 </CardContent>
               </Card>
             ))}
@@ -432,26 +466,26 @@ export const ProfilePage = () => {
             <CardHeader><CardTitle style={{ fontSize: '1.1rem' }}>Recent Governance & Activity Log</CardTitle></CardHeader>
             <CardContent>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', fontSize: '0.875rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '0.75rem', borderBottom: '1px solid var(--color-border)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '0.75rem', borderBottom: '1px solid var(--border)' }}>
                   <div>
                     <span style={{ fontWeight: 600 }}>Paediatric Danger Sign Assessment</span>
-                    <p style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', margin: 0 }}>Patient: Amara Diop (PT-2026-0002) · Escalated to Supervisor</p>
+                    <p style={{ fontSize: '0.75rem', color: 'var(--muted-foreground)', margin: 0 }}>Patient: Amara Diop (PT-2026-0002) · Escalated to Supervisor</p>
                   </div>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>Today, 10:15 AM</span>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--muted-foreground)' }}>Today, 10:15 AM</span>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '0.75rem', borderBottom: '1px solid var(--color-border)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '0.75rem', borderBottom: '1px solid var(--border)' }}>
                   <div>
                     <span style={{ fontWeight: 600 }}>Follow-up Visit Completed</span>
-                    <p style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', margin: 0 }}>Patient: Amina Mwangi (PT-2026-0001) · Post-fever recovery</p>
+                    <p style={{ fontSize: '0.75rem', color: 'var(--muted-foreground)', margin: 0 }}>Patient: Amina Mwangi (PT-2026-0001) · Post-fever recovery</p>
                   </div>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>Yesterday, 3:30 PM</span>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--muted-foreground)' }}>Yesterday, 3:30 PM</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <div>
                     <span style={{ fontWeight: 600 }}>Lesson Completed: Maternal ANC Criteria</span>
-                    <p style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', margin: 0 }}>Scored 100% on module evaluation</p>
+                    <p style={{ fontSize: '0.75rem', color: 'var(--muted-foreground)', margin: 0 }}>Scored 100% on module evaluation</p>
                   </div>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>Aug 20, 2026</span>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--muted-foreground)' }}>Aug 20, 2026</span>
                 </div>
               </div>
             </CardContent>

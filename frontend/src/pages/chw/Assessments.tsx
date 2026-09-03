@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
@@ -21,7 +22,17 @@ const assessmentQuestions = [
   { id: 'q5', text: 'Any additional clinical notes?', helpText: 'Record any observations not captured by the questions above.', type: 'text' },
 ];
 
+const getSpeechLocale = (lang: string) => {
+  switch (lang) {
+    case 'ar': return 'ar-SA';
+    case 'es': return 'es-ES';
+    case 'hi': return 'hi-IN';
+    default: return 'en-US';
+  }
+};
+
 export const AssessmentsPage = () => {
+  const { t, i18n } = useTranslation();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -95,7 +106,7 @@ export const AssessmentsPage = () => {
       const recognition = new SpeechRecognition();
       recognition.continuous = true;
       recognition.interimResults = true;
-      recognition.lang = 'en-US';
+      recognition.lang = getSpeechLocale(i18n.language);
 
       baseAnswerRef.current = currentAnswer;
 

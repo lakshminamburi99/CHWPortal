@@ -1,7 +1,9 @@
 import React, { useState, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { API_BASE } from '../config';
 
 export const CWSTbot: React.FC = () => {
+  const { t, i18n } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'chat' | 'camera'>('chat');
   const [query, setQuery] = useState('');
@@ -13,6 +15,8 @@ export const CWSTbot: React.FC = () => {
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+
+  const isRtl = i18n.dir() === 'rtl';
 
   const handleTextSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,7 +32,7 @@ export const CWSTbot: React.FC = () => {
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({ query }),
+        body: JSON.stringify({ query, language: i18n.language }),
       });
       if (res.ok) {
         const data = await res.json();
@@ -98,7 +102,7 @@ export const CWSTbot: React.FC = () => {
 
       mediaRecorder.start();
       setIsRecording(true);
-    } catch (err) {
+    } catch {
       submitVoiceQuery('mock_audio_base64');
     }
   };
@@ -121,7 +125,7 @@ export const CWSTbot: React.FC = () => {
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({ audioBase64 }),
+        body: JSON.stringify({ audioBase64, language: i18n.language }),
       });
       if (res.ok) {
         const data = await res.json();
@@ -145,10 +149,10 @@ export const CWSTbot: React.FC = () => {
         style={{
           position: 'fixed',
           bottom: '24px',
-          right: '24px',
-          backgroundColor: '#0f172a',
-          color: 'white',
-          border: 'none',
+          insetInlineEnd: '24px',
+          backgroundColor: 'var(--sidebar)',
+          color: 'var(--sidebar-foreground)',
+          border: '1px solid var(--sidebar-border)',
           borderRadius: '999px',
           padding: '12px 22px',
           fontSize: '0.875rem',
@@ -163,7 +167,7 @@ export const CWSTbot: React.FC = () => {
         }}
       >
         <span style={{ fontSize: '1.25rem' }}>🤖</span>
-        <span>CWSTbot</span>
+        <span>{t('bot.title')}</span>
       </button>
 
       {/* Slide-out Drawer Panel */}
@@ -172,52 +176,53 @@ export const CWSTbot: React.FC = () => {
           style={{
             position: 'fixed',
             bottom: '84px',
-            right: '24px',
+            insetInlineEnd: '24px',
             width: '430px',
+            maxWidth: 'calc(100vw - 48px)',
             maxHeight: '640px',
-            backgroundColor: 'white',
-            border: '1px solid #e2e8f0',
+            backgroundColor: 'var(--card)',
+            border: '1px solid var(--border)',
             borderRadius: '16px',
-            boxShadow: '0 20px 40px rgba(0,0,0,0.18)',
+            boxShadow: 'var(--shadow-raised)',
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden',
             zIndex: 9999,
-            fontFamily: 'Plus Jakarta Sans, system-ui, sans-serif',
+            fontFamily: 'inherit',
           }}
         >
           {/* Header */}
           <div
             style={{
               padding: '14px 18px',
-              backgroundColor: '#0f172a',
-              color: 'white',
+              backgroundColor: 'var(--sidebar)',
+              color: 'var(--sidebar-foreground)',
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
             }}
           >
             <div>
-              <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>CWSTbot — GCP Clinical Swarm</div>
-              <div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Multi-Agent Swarm · mRDT Vision · Speech V2</div>
+              <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>{t('bot.title')} — GCP Clinical Swarm</div>
+              <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.6)' }}>Multi-Agent Swarm · mRDT Vision · Speech V2</div>
             </div>
             <button
               onClick={() => setIsOpen(false)}
-              style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '1.2rem' }}
+              style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', fontSize: '1.2rem' }}
             >
               ✕
             </button>
           </div>
 
           {/* Sub-Header Navigation Tabs */}
-          <div style={{ display: 'flex', borderBottom: '1px solid #e2e8f0', backgroundColor: '#f8fafc' }}>
+          <div style={{ display: 'flex', borderBottom: '1px solid var(--border)', backgroundColor: 'var(--muted)' }}>
             <button
               onClick={() => setActiveTab('chat')}
               style={{
                 flex: 1, padding: '10px', fontSize: '0.8rem', fontWeight: 600, border: 'none',
-                borderBottom: activeTab === 'chat' ? '2px solid #0f172a' : 'none',
-                backgroundColor: activeTab === 'chat' ? 'white' : 'transparent',
-                color: activeTab === 'chat' ? '#0f172a' : '#64748b', cursor: 'pointer'
+                borderBottom: activeTab === 'chat' ? '2px solid var(--primary)' : 'none',
+                backgroundColor: activeTab === 'chat' ? 'var(--card)' : 'transparent',
+                color: activeTab === 'chat' ? 'var(--foreground)' : 'var(--muted-foreground)', cursor: 'pointer'
               }}
             >
               💬 Swarm Chat & Voice
@@ -226,9 +231,9 @@ export const CWSTbot: React.FC = () => {
               onClick={() => setActiveTab('camera')}
               style={{
                 flex: 1, padding: '10px', fontSize: '0.8rem', fontWeight: 600, border: 'none',
-                borderBottom: activeTab === 'camera' ? '2px solid #0f172a' : 'none',
-                backgroundColor: activeTab === 'camera' ? 'white' : 'transparent',
-                color: activeTab === 'camera' ? '#0f172a' : '#64748b', cursor: 'pointer'
+                borderBottom: activeTab === 'camera' ? '2px solid var(--primary)' : 'none',
+                backgroundColor: activeTab === 'camera' ? 'var(--card)' : 'transparent',
+                color: activeTab === 'camera' ? 'var(--foreground)' : 'var(--muted-foreground)', cursor: 'pointer'
               }}
             >
               📷 mRDT Camera Scanner
@@ -240,8 +245,8 @@ export const CWSTbot: React.FC = () => {
             {activeTab === 'chat' ? (
               <>
                 {!response && !loading && (
-                  <div style={{ backgroundColor: '#f8fafc', padding: '14px', borderRadius: '10px', border: '1px solid #e2e8f0', fontSize: '0.8rem', color: '#475569', lineHeight: 1.5 }}>
-                    👋 Welcome to <strong>CWSTbot</strong>. Ask any clinical query or use the microphone. Your query will trigger 5 coordinated GCP sub-agents:
+                  <div style={{ backgroundColor: 'var(--muted)', padding: '14px', borderRadius: '10px', border: '1px solid var(--border)', fontSize: '0.8rem', color: 'var(--foreground)', lineHeight: 1.5 }}>
+                    {t('bot.greeting')}
                     <div style={{ marginTop: '8px', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                       <span style={{ backgroundColor: '#eff6ff', color: '#1e40af', padding: '2px 8px', borderRadius: '12px', fontSize: '0.72rem' }}>🩺 TriageAgent</span>
                       <span style={{ backgroundColor: '#fef3c7', color: '#92400e', padding: '2px 8px', borderRadius: '12px', fontSize: '0.72rem' }}>💊 PharmaAgent</span>
@@ -268,13 +273,13 @@ export const CWSTbot: React.FC = () => {
 
                     {/* Sub-Agent Execution Badges */}
                     {response.swarm_agents_executed && (
-                      <div style={{ backgroundColor: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                        <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#334155', marginBottom: '8px', textTransform: 'uppercase' }}>
+                      <div style={{ backgroundColor: 'var(--muted)', padding: '12px', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                        <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--foreground)', marginBottom: '8px', textTransform: 'uppercase' }}>
                           🐝 Sub-Agents Coordinated ({response.swarm_agents_executed.length}):
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                           {response.swarm_agents_executed.map((sa: any, i: number) => (
-                            <div key={i} style={{ fontSize: '0.725rem', color: '#0f172a', backgroundColor: 'white', padding: '6px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', display: 'flex', justifyContent: 'space-between' }}>
+                            <div key={i} style={{ fontSize: '0.725rem', color: 'var(--foreground)', backgroundColor: 'var(--card)', padding: '6px 10px', borderRadius: '6px', border: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between' }}>
                               <span><strong>{sa.agent}</strong></span>
                               <span style={{ color: '#059669', fontWeight: 600 }}>Executed</span>
                             </div>
@@ -297,20 +302,20 @@ export const CWSTbot: React.FC = () => {
             ) : (
               /* Camera / Vision Tab */
               <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                <div style={{ backgroundColor: '#f8fafc', padding: '14px', borderRadius: '10px', border: '1px solid #e2e8f0', fontSize: '0.8rem', color: '#475569' }}>
+                <div style={{ backgroundColor: 'var(--muted)', padding: '14px', borderRadius: '10px', border: '1px solid var(--border)', fontSize: '0.8rem', color: 'var(--foreground)' }}>
                   📷 <strong>Computer Vision mRDT Scanner:</strong> Upload a photo of a Malaria Rapid Diagnostic Test cassette or skin lesion for instant line detection.
                 </div>
 
                 <label
                   style={{
                     display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                    padding: '24px', border: '2px dashed #cbd5e1', borderRadius: '12px', cursor: 'pointer',
-                    backgroundColor: '#fafafa', textAlign: 'center'
+                    padding: '24px', border: '2px dashed var(--border)', borderRadius: '12px', cursor: 'pointer',
+                    backgroundColor: 'var(--card)', textAlign: 'center'
                   }}
                 >
                   <span style={{ fontSize: '1.8rem', marginBottom: '6px' }}>📸</span>
-                  <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#0f172a' }}>Click to snap / upload mRDT photo</span>
-                  <span style={{ fontSize: '0.725rem', color: '#94a3b8', marginTop: '4px' }}>Supports PNG, JPG, WEBP</span>
+                  <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--foreground)' }}>Click to snap / upload mRDT photo</span>
+                  <span style={{ fontSize: '0.725rem', color: 'var(--muted-foreground)', marginTop: '4px' }}>Supports PNG, JPG, WEBP</span>
                   <input type="file" accept="image/*" onChange={handleImageUpload} style={{ display: 'none' }} />
                 </label>
 
@@ -339,22 +344,22 @@ export const CWSTbot: React.FC = () => {
 
           {/* Footer Input Bar */}
           {activeTab === 'chat' && (
-            <form onSubmit={handleTextSubmit} style={{ padding: '12px', borderTop: '1px solid #e2e8f0', display: 'flex', gap: '8px', backgroundColor: '#f8fafc' }}>
+            <form onSubmit={handleTextSubmit} style={{ padding: '12px', borderTop: '1px solid var(--border)', display: 'flex', gap: '8px', backgroundColor: 'var(--muted)' }}>
               <input
                 type="text"
                 value={query}
                 onChange={e => setQuery(e.target.value)}
-                placeholder="Ask CWSTbot clinical query…"
+                placeholder={t('bot.placeholder')}
                 style={{
-                  flex: 1, border: '1px solid #cbd5e1', borderRadius: '8px', padding: '8px 12px',
-                  fontSize: '0.825rem', outline: 'none', fontFamily: 'inherit',
+                  flex: 1, border: '1px solid var(--border)', borderRadius: '8px', padding: '8px 12px',
+                  fontSize: '0.825rem', outline: 'none', fontFamily: 'inherit', backgroundColor: 'var(--card)', color: 'var(--foreground)'
                 }}
               />
               <button
                 type="button"
                 onClick={isRecording ? stopVoiceRecording : startVoiceRecording}
                 style={{
-                  backgroundColor: isRecording ? '#ef4444' : '#3b82f6', color: 'white', border: 'none',
+                  backgroundColor: isRecording ? '#ef4444' : 'var(--primary)', color: 'white', border: 'none',
                   borderRadius: '8px', padding: '0 12px', cursor: 'pointer', fontSize: '0.9rem',
                 }}
                 title="Voice Input (Speech-to-Text V2)"
@@ -365,11 +370,11 @@ export const CWSTbot: React.FC = () => {
                 type="submit"
                 disabled={loading}
                 style={{
-                  backgroundColor: '#0f172a', color: 'white', border: 'none', borderRadius: '8px',
+                  backgroundColor: 'var(--primary)', color: 'var(--primary-foreground)', border: 'none', borderRadius: '8px',
                   padding: '0 14px', fontSize: '0.825rem', fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer',
                 }}
               >
-                Ask
+                {t('bot.ask_btn')}
               </button>
             </form>
           )}

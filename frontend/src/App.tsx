@@ -142,147 +142,140 @@ const RoleRedirect = () => {
 };
 
 
+import { LanguageSelector } from './components/LanguageSelector';
+
 // ---------------------------------------------------------
-// Sidebar nav items by role
+// Sidebar nav items helper by role
 // ---------------------------------------------------------
-const navConfig: Record<Role, { section: string; items: { label: string; path: string; icon: string }[] }[]> = {
+const getNavConfig = (t: (key: string) => string): Record<Role, { section: string; items: { label: string; path: string; icon: string }[] }[]> => ({
   CHW: [
     {
-      section: 'CLINICAL CARE',
+      section: t('nav.sections.FIELD_WORKSPACE'),
       items: [
-        { label: 'Home', path: '/chw/dashboard', icon: '🏠' },
-        { label: 'Patients', path: '/chw/patients', icon: '👥' },
-        { label: 'Assessments', path: '/chw/assessments', icon: '🩺' },
-        { label: 'Cases', path: '/chw/cases', icon: '📋' },
+        { label: t('nav.items.home'), path: '/chw/dashboard', icon: '🏠' },
+        { label: t('nav.items.patients'), path: '/chw/patients', icon: '👥' },
+        { label: t('nav.items.assessments'), path: '/chw/assessments', icon: '🩺' },
+        { label: t('nav.items.cases'), path: '/chw/cases', icon: '📋' },
       ],
     },
     {
-      section: 'COORDINATION',
+      section: t('nav.sections.FIELD_WORKSPACE'),
       items: [
-        { label: 'Referrals', path: '/chw/referrals', icon: '📤' },
-        { label: 'Follow-ups', path: '/chw/follow-ups', icon: '💓' },
-        { label: 'Notifications', path: '/chw/notifications', icon: '🔔' },
+        { label: t('nav.items.referrals'), path: '/chw/referrals', icon: '📤' },
+        { label: t('nav.items.follow_ups'), path: '/chw/follow-ups', icon: '💓' },
+        { label: t('nav.items.notifications'), path: '/chw/notifications', icon: '🔔' },
       ],
     },
     {
-      section: 'LEARNING & ACCOUNT',
+      section: t('nav.sections.FIELD_WORKSPACE'),
       items: [
-        { label: 'Training', path: '/chw/training', icon: '🎓' },
-        { label: 'Profile', path: '/chw/profile', icon: '👤' },
+        { label: t('nav.items.training'), path: '/chw/training', icon: '🎓' },
+        { label: t('nav.items.profile'), path: '/chw/profile', icon: '👤' },
       ],
     },
   ],
   SUPERVISOR: [
     {
-      section: 'CLINICAL OVERSIGHT',
+      section: t('nav.sections.SUPERVISOR'),
       items: [
-        { label: 'Home', path: '/supervisor/dashboard', icon: '🏠' },
-        { label: 'Triage', path: '/supervisor/triage', icon: '🚨' },
-        { label: 'Cases', path: '/supervisor/cases', icon: '📋' },
-        { label: 'Patients', path: '/supervisor/patients', icon: '👥' },
+        { label: t('nav.items.home'), path: '/supervisor/dashboard', icon: '🏠' },
+        { label: t('nav.items.triage'), path: '/supervisor/triage', icon: '🚨' },
+        { label: t('nav.items.cases'), path: '/supervisor/cases', icon: '📋' },
+        { label: t('nav.items.patients'), path: '/supervisor/patients', icon: '👥' },
       ],
     },
     {
-      section: 'TEAM',
+      section: t('nav.sections.SUPERVISOR'),
       items: [
-        { label: 'Health workers', path: '/supervisor/team', icon: '👷' },
-        { label: 'Referrals', path: '/supervisor/referrals', icon: '📤' },
-        { label: 'Follow-ups', path: '/supervisor/follow-ups', icon: '💓' },
-        { label: 'Notifications', path: '/supervisor/notifications', icon: '🔔' },
+        { label: t('nav.items.team'), path: '/supervisor/team', icon: '👷' },
+        { label: t('nav.items.referrals'), path: '/supervisor/referrals', icon: '📤' },
+        { label: t('nav.items.follow_ups'), path: '/supervisor/follow-ups', icon: '💓' },
+        { label: t('nav.items.notifications'), path: '/supervisor/notifications', icon: '🔔' },
       ],
     },
     {
-      section: 'ACCOUNT',
+      section: t('nav.sections.SUPERVISOR'),
       items: [
-        { label: 'Profile', path: '/supervisor/profile', icon: '👤' },
+        { label: t('nav.items.profile'), path: '/supervisor/profile', icon: '👤' },
       ],
     },
   ],
   MANAGER: [
     {
-      section: 'PROGRAMME',
+      section: t('nav.sections.PROGRAMME'),
       items: [
-        { label: 'Home', path: '/manager/dashboard', icon: '🏠' },
-        { label: 'Regions', path: '/manager/regions', icon: '🗺️' },
-        { label: 'Districts', path: '/manager/districts', icon: '📍' },
-        { label: 'Teams', path: '/manager/teams', icon: '👥' },
-        { label: 'Reports', path: '/manager/reports', icon: '📊' },
+        { label: t('nav.items.home'), path: '/manager/dashboard', icon: '🏠' },
+        { label: t('nav.items.regions'), path: '/manager/regions', icon: '🗺️' },
+        { label: t('nav.items.districts'), path: '/manager/districts', icon: '📍' },
+        { label: t('nav.items.teams'), path: '/manager/teams', icon: '👥' },
+        { label: t('nav.items.reports'), path: '/manager/reports', icon: '📊' },
       ],
     },
     {
-      section: 'ACCOUNT',
+      section: t('nav.sections.PROGRAMME'),
       items: [
-        { label: 'Notifications', path: '/manager/notifications', icon: '🔔' },
-        { label: 'Profile', path: '/manager/profile', icon: '👤' },
+        { label: t('nav.items.notifications'), path: '/manager/notifications', icon: '🔔' },
+        { label: t('nav.items.profile'), path: '/manager/profile', icon: '👤' },
       ],
     },
   ],
   PROGRAMME_MANAGER: [
     {
-      section: 'PROGRAMME',
+      section: t('nav.sections.PROGRAMME'),
       items: [
-        { label: 'Home', path: '/manager/dashboard', icon: '🏠' },
-        { label: 'Regions', path: '/manager/regions', icon: '🗺️' },
-        { label: 'Districts', path: '/manager/districts', icon: '📍' },
-        { label: 'Teams', path: '/manager/teams', icon: '👥' },
-        { label: 'Reports', path: '/manager/reports', icon: '📊' },
+        { label: t('nav.items.home'), path: '/manager/dashboard', icon: '🏠' },
+        { label: t('nav.items.regions'), path: '/manager/regions', icon: '🗺️' },
+        { label: t('nav.items.districts'), path: '/manager/districts', icon: '📍' },
+        { label: t('nav.items.teams'), path: '/manager/teams', icon: '👥' },
+        { label: t('nav.items.reports'), path: '/manager/reports', icon: '📊' },
       ],
     },
     {
-      section: 'ACCOUNT',
+      section: t('nav.sections.PROGRAMME'),
       items: [
-        { label: 'Notifications', path: '/manager/notifications', icon: '🔔' },
-        { label: 'Profile', path: '/manager/profile', icon: '👤' },
+        { label: t('nav.items.notifications'), path: '/manager/notifications', icon: '🔔' },
+        { label: t('nav.items.profile'), path: '/manager/profile', icon: '👤' },
       ],
     },
   ],
   REGIONAL_ADMIN: [
     {
-      section: 'ADMINISTRATION',
+      section: t('nav.sections.ADMINISTRATION'),
       items: [
-        { label: 'Home', path: '/admin/regional/dashboard', icon: '🏠' },
-        { label: 'Accounts', path: '/admin/regional/accounts', icon: '👥' },
-        { label: 'Org units', path: '/admin/regional/org-units', icon: '🏢' },
+        { label: t('nav.items.home'), path: '/admin/regional/dashboard', icon: '🏠' },
+        { label: t('nav.items.accounts'), path: '/admin/regional/accounts', icon: '👥' },
+        { label: t('nav.items.org_units'), path: '/admin/regional/org-units', icon: '🏢' },
       ],
     },
     {
-      section: 'ACCOUNT',
+      section: t('nav.sections.ADMINISTRATION'),
       items: [
-        { label: 'Notifications', path: '/admin/regional/notifications', icon: '🔔' },
-        { label: 'Profile', path: '/admin/regional/profile', icon: '👤' },
+        { label: t('nav.items.notifications'), path: '/admin/regional/notifications', icon: '🔔' },
+        { label: t('nav.items.profile'), path: '/admin/regional/profile', icon: '👤' },
       ],
     },
   ],
   SUPER_ADMIN: [
     {
-      section: 'PLATFORM',
+      section: t('nav.sections.PLATFORM'),
       items: [
-        { label: 'Home', path: '/admin/super/dashboard', icon: '🏠' },
-        { label: 'Users', path: '/admin/super/users', icon: '👥' },
-        { label: 'Roles', path: '/admin/super/roles', icon: '🛡️' },
-        { label: 'Audit', path: '/admin/super/audit', icon: '📜' },
-        { label: 'Settings', path: '/admin/super/settings', icon: '⚙️' },
+        { label: t('nav.items.home'), path: '/admin/super/dashboard', icon: '🏠' },
+        { label: t('nav.items.users'), path: '/admin/super/users', icon: '👥' },
+        { label: t('nav.items.roles'), path: '/admin/super/roles', icon: '🛡️' },
+        { label: t('nav.items.audit'), path: '/admin/super/audit', icon: '📜' },
+        { label: t('nav.items.settings'), path: '/admin/super/settings', icon: '⚙️' },
       ],
     },
     {
-      section: 'ORGANISATION',
+      section: t('nav.sections.ORGANISATION'),
       items: [
-        { label: 'Org units', path: '/admin/super/org-units', icon: '🏢' },
-        { label: 'Notifications', path: '/admin/super/notifications', icon: '🔔' },
-        { label: 'Profile', path: '/admin/super/profile', icon: '👤' },
+        { label: t('nav.items.org_units'), path: '/admin/super/org-units', icon: '🏢' },
+        { label: t('nav.items.notifications'), path: '/admin/super/notifications', icon: '🔔' },
+        { label: t('nav.items.profile'), path: '/admin/super/profile', icon: '👤' },
       ],
     },
   ],
-};
-
-const roleBadgeLabel: Record<Role, string> = {
-  CHW: 'COMMUNITY HEALTH WORKER',
-  SUPERVISOR: 'SUPERVISOR',
-  MANAGER: 'PROGRAMME MANAGER',
-  PROGRAMME_MANAGER: 'PROGRAMME MANAGER',
-  REGIONAL_ADMIN: 'REGIONAL ADMINISTRATOR',
-  SUPER_ADMIN: 'SUPER ADMINISTRATOR',
-};
+});
 
 const CompassLogoIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -296,9 +289,11 @@ const CompassLogoIcon = () => (
 // ---------------------------------------------------------
 const Sidebar = () => {
   const { user, logout } = useAuth();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   if (!user) return null;
-  const sections = navConfig[user.role];
+  const isRtl = i18n.dir() === 'rtl';
+  const sections = getNavConfig(t)[user.role];
   const initials = user.name.split(' ').map(n => n[0]).join('');
 
   return (
@@ -312,6 +307,7 @@ const Sidebar = () => {
       overflowY: 'auto',
       height: '100vh',
       fontFamily: 'var(--font-sans)',
+      borderInlineEnd: '1px solid var(--sidebar-border)',
     }}>
       {/* Brand */}
       <div style={{ padding: '1.25rem 1.25rem 1rem', borderBottom: '1px solid var(--sidebar-border)' }}>
@@ -326,10 +322,12 @@ const Sidebar = () => {
           }}>
             <CompassLogoIcon />
           </div>
-          <div style={{ fontWeight: 700, fontSize: '1.05rem', color: 'var(--sidebar-foreground)', letterSpacing: '-0.01em' }}>Care Compass</div>
+          <div style={{ fontWeight: 700, fontSize: '1.05rem', color: 'var(--sidebar-foreground)', letterSpacing: '-0.01em' }}>
+            {t('app_name')}
+          </div>
         </div>
-        <div style={{ fontSize: '0.67rem', color: 'rgba(255,255,255,0.45)', paddingLeft: '38px' }}>
-          Community health worker support platform
+        <div style={{ fontSize: '0.67rem', color: 'rgba(255,255,255,0.45)', paddingInlineStart: '38px' }}>
+          {t('app_subtitle')}
         </div>
         <div style={{
           display: 'inline-block',
@@ -343,14 +341,14 @@ const Sidebar = () => {
           color: 'var(--sidebar-accent-foreground)',
           textTransform: 'uppercase',
         }}>
-          {roleBadgeLabel[user.role]}
+          {t(`roles.${user.role}`)}
         </div>
       </div>
 
       {/* Navigation */}
       <nav style={{ flex: 1, padding: '1rem 0' }}>
-        {sections.map((section) => (
-          <div key={section.section} style={{ marginBottom: '1.5rem' }}>
+        {sections.map((section, idx) => (
+          <div key={idx} style={{ marginBottom: '1.5rem' }}>
             <div style={{
               padding: '0 1.25rem 0.4rem',
               fontSize: '0.65rem',
@@ -373,11 +371,11 @@ const Sidebar = () => {
                   fontWeight: isActive ? 600 : 400,
                   color: isActive ? 'var(--sidebar-accent-foreground)' : 'rgba(255,255,255,0.6)',
                   backgroundColor: isActive ? 'var(--sidebar-accent)' : 'transparent',
-                  borderLeft: isActive ? '2px solid var(--sidebar-primary)' : '2px solid transparent',
+                  borderInlineStart: isActive ? '3px solid var(--sidebar-primary)' : '3px solid transparent',
                   textDecoration: 'none',
                   transition: 'all var(--transition-fast)',
-                  borderRadius: '0 var(--radius-sm) var(--radius-sm) 0',
-                  marginRight: '0.75rem',
+                  borderRadius: isRtl ? 'var(--radius-sm) 0 0 var(--radius-sm)' : '0 var(--radius-sm) var(--radius-sm) 0',
+                  marginInlineEnd: '0.75rem',
                 })}
               >
                 <span style={{ fontSize: '0.875rem', opacity: 0.85 }}>{item.icon}</span>
@@ -400,7 +398,7 @@ const Sidebar = () => {
           }}>
             {initials}
           </div>
-          <div style={{ minWidth: 0 }}>
+          <div style={{ minWidth: 0, flex: 1 }}>
             <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--sidebar-foreground)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.name}</div>
             <div style={{ fontSize: '0.67rem', color: 'rgba(255,255,255,0.4)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.email}</div>
           </div>
@@ -417,7 +415,7 @@ const Sidebar = () => {
             transition: 'background-color var(--transition-fast)',
           }}
         >
-          Sign out
+          {t('common.sign_out')}
         </button>
       </div>
     </aside>
@@ -427,11 +425,9 @@ const Sidebar = () => {
 // ---------------------------------------------------------
 // Top Header
 // ---------------------------------------------------------
-const langLabels: Record<string, string> = { en: 'English', es: 'Español', ar: 'العربية', hi: 'हिन्दी' };
-
 const Header = () => {
   const { user } = useAuth();
-  const { i18n } = useTranslation();
+  const { t } = useTranslation();
   if (!user) return null;
   const initials = user.name.split(' ').map((n: string) => n[0]).join('');
 
@@ -449,7 +445,7 @@ const Header = () => {
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
         <span style={{ fontSize: '0.8125rem', color: 'var(--muted-foreground)', fontWeight: 500 }}>
-          {roleBadgeLabel[user.role].charAt(0) + roleBadgeLabel[user.role].slice(1).toLowerCase()}
+          {t(`roles.${user.role}`)}
         </span>
         <span style={{
           fontSize: '0.7rem',
@@ -461,30 +457,11 @@ const Header = () => {
           fontWeight: 600,
           letterSpacing: '0.02em',
         }}>
-          Online
+          {t('common.online')}
         </span>
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-        <select
-          value={i18n.language}
-          onChange={(e) => i18n.changeLanguage(e.target.value)}
-          style={{
-            border: '1px solid var(--border)',
-            borderRadius: 'var(--radius-sm)',
-            padding: '0.3rem 0.5rem',
-            fontSize: '0.8125rem',
-            fontFamily: 'var(--font-sans)',
-            backgroundColor: 'var(--background)',
-            color: 'var(--foreground)',
-            cursor: 'pointer',
-            outline: 'none',
-          }}
-        >
-          <option value="en">English</option>
-          <option value="es">Español</option>
-          <option value="ar">العربية</option>
-          <option value="hi">हिन्दी</option>
-        </select>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+        <LanguageSelector variant="dropdown" />
         <div style={{
           width: '34px', height: '34px', borderRadius: '50%',
           backgroundColor: 'var(--primary)',
