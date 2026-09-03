@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../App';
 import { Card, CardContent } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
+import { formatDate } from '../../utils/formatters';
+import { API_BASE } from '../../config';
 
 // ── Icons ────────────────────────────────────────────────────────────────────
 const UserPlusIcon = () => (
@@ -33,10 +36,9 @@ const SendIcon = () => (
   </svg>
 );
 
-import { API_BASE } from '../../config';
-
 export const ChwDashboard = () => {
   const { user } = useAuth();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
 
   // State for metrics and priority cases
@@ -56,7 +58,7 @@ export const ChwDashboard = () => {
       riskLevel: 'HIGH',
       status: 'SUPERVISOR_REVIEW',
       reason: 'Assessment criteria indicate this case requires clinical review.',
-      createdAt: 'Aug 22, 2026',
+      createdAt: '2026-08-22',
     },
   ]);
 
@@ -100,7 +102,7 @@ export const ChwDashboard = () => {
               riskLevel: c.riskLevel || 'HIGH',
               status: c.status || 'SUPERVISOR_REVIEW',
               reason: c.protocolResult?.reason || 'Assessment criteria indicate this case requires clinical review.',
-              createdAt: c.createdAt ? c.createdAt.slice(0, 10) : 'Aug 22, 2026',
+              createdAt: c.createdAt ? c.createdAt.slice(0, 10) : '2026-08-22',
             })));
           }
         }
@@ -125,7 +127,7 @@ export const ChwDashboard = () => {
           lastName: newPatient.lastName,
           dateOfBirth: newPatient.dateOfBirth || '2000-01-01',
           sex: newPatient.sex,
-          preferredLanguage: 'en',
+          preferredLanguage: i18n.language || 'en',
           phone: newPatient.phone || '+1-555-0100',
           address: newPatient.address || 'Riverside Community',
           emergencyContact: { name: 'Contact', relationship: 'Family', phone: newPatient.phone || '+1-555-0100' },
@@ -138,7 +140,6 @@ export const ChwDashboard = () => {
         navigate('/chw/patients');
       }
     } catch {
-      // Fallback redirect
       setShowNewPatientModal(false);
       navigate('/chw/patients');
     } finally {
@@ -146,7 +147,14 @@ export const ChwDashboard = () => {
     }
   };
 
-  const todayStr = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return t('dashboard.greeting_morning');
+    if (hour < 17) return t('dashboard.greeting_afternoon');
+    return t('dashboard.greeting_evening');
+  };
+
+  const todayStr = formatDate(new Date(), i18n.language);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', fontFamily: 'var(--font-sans)' }}>
@@ -155,10 +163,10 @@ export const ChwDashboard = () => {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
           <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--foreground)', marginBottom: '0.25rem' }}>
-            Good afternoon, {user?.name ? user.name.split(' ')[0] : 'John'}
+            {getGreeting()}, {user?.name ? user.name.split(' ')[0] : 'John'}
           </h1>
           <p style={{ color: 'var(--muted-foreground)', fontSize: '0.875rem' }}>
-            {todayStr} · {stats.visitsPlanned} visits planned, {stats.flaggedCases} flagged case{stats.flaggedCases !== 1 ? 's' : ''}
+            {todayStr} · {t('dashboard.summary_line', { visits: stats.visitsPlanned, flagged: stats.flaggedCases })}
           </p>
         </div>
       </div>
@@ -173,10 +181,10 @@ export const ChwDashboard = () => {
         >
           <CardContent style={{ padding: '1.25rem' }}>
             <p style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--muted-foreground)', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>
-              VISITS PLANNED
+              {t('dashboard.kpi_visits_planned')}
             </p>
             <p style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--foreground)', lineHeight: 1.1 }}>{stats.visitsPlanned}</p>
-            <p style={{ fontSize: '0.75rem', color: 'var(--muted-foreground)', marginTop: '0.35rem' }}>Follow-ups due today →</p>
+            <p style={{ fontSize: '0.75rem', color: 'var(--muted-foreground)', marginTop: '0.35rem' }}>{t('dashboard.kpi_visits_sub')}</p>
           </CardContent>
         </Card>
 
@@ -193,10 +201,10 @@ export const ChwDashboard = () => {
         >
           <CardContent style={{ padding: '1.25rem' }}>
             <p style={{ fontSize: '0.72rem', fontWeight: 600, color: stats.flaggedCases > 0 ? '#991b1b' : 'var(--muted-foreground)', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>
-              FLAGGED CASES
+              {t('dashboard.kpi_flagged_cases')}
             </p>
             <p style={{ fontSize: '2rem', fontWeight: 800, color: stats.flaggedCases > 0 ? '#991b1b' : 'var(--foreground)', lineHeight: 1.1 }}>{stats.flaggedCases}</p>
-            <p style={{ fontSize: '0.75rem', color: stats.flaggedCases > 0 ? '#b91c1c' : 'var(--muted-foreground)', marginTop: '0.35rem' }}>Awaiting supervisor review →</p>
+            <p style={{ fontSize: '0.75rem', color: stats.flaggedCases > 0 ? '#b91c1c' : 'var(--muted-foreground)', marginTop: '0.35rem' }}>{t('dashboard.kpi_flagged_sub')}</p>
           </CardContent>
         </Card>
 
@@ -208,10 +216,10 @@ export const ChwDashboard = () => {
         >
           <CardContent style={{ padding: '1.25rem' }}>
             <p style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--muted-foreground)', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>
-              OVERDUE FOLLOW-UPS
+              {t('dashboard.kpi_overdue_followups')}
             </p>
             <p style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--foreground)', lineHeight: 1.1 }}>{stats.overdueFollowups}</p>
-            <p style={{ fontSize: '0.75rem', color: 'var(--muted-foreground)', marginTop: '0.35rem' }}>Reschedule as soon as possible →</p>
+            <p style={{ fontSize: '0.75rem', color: 'var(--muted-foreground)', marginTop: '0.35rem' }}>{t('dashboard.kpi_overdue_sub')}</p>
           </CardContent>
         </Card>
 
@@ -223,18 +231,18 @@ export const ChwDashboard = () => {
         >
           <CardContent style={{ padding: '1.25rem' }}>
             <p style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--muted-foreground)', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>
-              ASSIGNED PATIENTS
+              {t('dashboard.kpi_assigned_patients')}
             </p>
             <p style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--foreground)', lineHeight: 1.1 }}>{stats.assignedPatients}</p>
-            <p style={{ fontSize: '0.75rem', color: 'var(--muted-foreground)', marginTop: '0.35rem' }}>In your caseload →</p>
+            <p style={{ fontSize: '0.75rem', color: 'var(--muted-foreground)', marginTop: '0.35rem' }}>{t('dashboard.kpi_assigned_sub')}</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Quick Actions Row — 4 working buttons */}
+      {/* Quick Actions Row */}
       <div>
         <h2 style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--muted-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.75rem' }}>
-          Quick Actions
+          {t('dashboard.quick_actions_title')}
         </h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
           <Button
@@ -254,7 +262,7 @@ export const ChwDashboard = () => {
             }}
           >
             <UserPlusIcon />
-            <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>New patient</span>
+            <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>{t('dashboard.action_new_patient')}</span>
           </Button>
 
           <Button
@@ -274,7 +282,7 @@ export const ChwDashboard = () => {
             }}
           >
             <StethoscopeIcon />
-            <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>Start assessment</span>
+            <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>{t('dashboard.action_run_assessment')}</span>
           </Button>
 
           <Button
@@ -294,7 +302,7 @@ export const ChwDashboard = () => {
             }}
           >
             <SearchIcon />
-            <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>Search patient</span>
+            <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>{t('common.search')} {t('nav.items.patients')}</span>
           </Button>
 
           <Button
@@ -314,7 +322,7 @@ export const ChwDashboard = () => {
             }}
           >
             <SendIcon />
-            <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>View referrals</span>
+            <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>{t('dashboard.action_log_referral')}</span>
           </Button>
         </div>
       </div>
@@ -322,132 +330,166 @@ export const ChwDashboard = () => {
       {/* Priority Cases Section */}
       <div style={{ marginTop: '0.5rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-          <h2 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--foreground)' }}>Priority cases</h2>
+          <div>
+            <h2 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--foreground)' }}>
+              {t('dashboard.priority_cases_title')}
+            </h2>
+            <p style={{ fontSize: '0.8rem', color: 'var(--muted-foreground)' }}>
+              {t('dashboard.priority_cases_sub')}
+            </p>
+          </div>
           <Button variant="outline" size="sm" onClick={() => navigate('/chw/cases')}>
-            All cases →
+            {t('common.view')} {t('common.all')} →
           </Button>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          {priorityCases.map(c => (
-            <Card key={c.id}>
-              <CardContent style={{ padding: '1.5rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
-                      <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: '0.875rem' }}>#{c.id}</span>
-                      <Badge variant="danger">{c.riskLevel} RISK</Badge>
-                      <Badge variant="warning">Supervisor review</Badge>
-                    </div>
-                    <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--foreground)', marginBottom: '0.25rem' }}>
-                      {c.patientName}
-                    </h3>
-                    <p style={{ fontSize: '0.875rem', color: 'var(--muted-foreground)', marginBottom: '0.875rem' }}>
-                      {c.templateName}
-                    </p>
-                    <div
-                      style={{
-                        padding: '0.75rem 1rem',
-                        backgroundColor: '#fef2f2',
-                        border: '1px solid #fecaca',
-                        borderRadius: 'var(--radius)',
-                        fontSize: '0.82rem',
-                        color: '#991b1b',
-                        maxWidth: '560px',
-                      }}
-                    >
-                      {c.reason}
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '1rem' }}>
-                    <span style={{ fontSize: '0.8rem', color: 'var(--muted-foreground)' }}>{c.createdAt}</span>
-                    <Button variant="primary" onClick={() => navigate('/chw/cases')}>
-                      View case →
-                    </Button>
-                  </div>
-                </div>
+          {priorityCases.length === 0 ? (
+            <Card>
+              <CardContent style={{ padding: '2rem', textAlign: 'center', color: 'var(--muted-foreground)' }}>
+                {t('dashboard.no_priority_cases')}
               </CardContent>
             </Card>
-          ))}
+          ) : (
+            priorityCases.map(c => (
+              <Card key={c.id}>
+                <CardContent style={{ padding: '1.5rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
+                        <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: '0.875rem' }}>#{c.id}</span>
+                        <Badge variant="danger">{t(`common.${c.riskLevel.toLowerCase()}`)} {t('common.priority')}</Badge>
+                        <Badge variant="warning">{t('roles.SUPERVISOR')} {t('common.view')}</Badge>
+                      </div>
+                      <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--foreground)', marginBottom: '0.25rem' }}>
+                        {c.patientName}
+                      </h3>
+                      <p style={{ fontSize: '0.875rem', color: 'var(--muted-foreground)', marginBottom: '0.875rem' }}>
+                        {c.templateName}
+                      </p>
+                      <div
+                        style={{
+                          padding: '0.75rem 1rem',
+                          backgroundColor: '#fef2f2',
+                          border: '1px solid #fecaca',
+                          borderRadius: 'var(--radius)',
+                          fontSize: '0.82rem',
+                          color: '#991b1b',
+                          maxWidth: '560px',
+                        }}
+                      >
+                        {c.reason}
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '1rem' }}>
+                      <span style={{ fontSize: '0.8rem', color: 'var(--muted-foreground)' }}>
+                        {formatDate(c.createdAt, i18n.language)}
+                      </span>
+                      <Button variant="primary" onClick={() => navigate('/chw/cases')}>
+                        {t('cases.view_case_details')} →
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          )}
         </div>
       </div>
 
       {/* ── New Patient Modal ── */}
-      <Modal isOpen={showNewPatientModal} onClose={() => setShowNewPatientModal(false)} title="Register new patient"
+      <Modal
+        isOpen={showNewPatientModal}
+        onClose={() => setShowNewPatientModal(false)}
+        title={t('patients.modal_title')}
         footer={<>
-          <Button variant="outline" type="button" onClick={() => setShowNewPatientModal(false)}>Cancel</Button>
+          <Button variant="outline" type="button" onClick={() => setShowNewPatientModal(false)}>
+            {t('common.cancel')}
+          </Button>
           <Button variant="primary" type="submit" form="dashboard-patient-form" disabled={savingPatient}>
-            {savingPatient ? 'Saving…' : 'Register patient'}
+            {savingPatient ? t('patients.saving') : t('patients.save_patient')}
           </Button>
         </>}
       >
         <form id="dashboard-patient-form" onSubmit={handleCreatePatientSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 500, color: '#374151', marginBottom: '0.25rem' }}>First name *</label>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 500, color: 'var(--foreground)', marginBottom: '0.25rem' }}>
+                {t('patients.first_name')} *
+              </label>
               <input
                 required
                 type="text"
                 value={newPatient.firstName}
                 onChange={e => setNewPatient({ ...newPatient, firstName: e.target.value })}
-                style={{ width: '100%', height: '38px', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '0 0.6rem', fontSize: '0.85rem' }}
+                style={{ width: '100%', height: '38px', border: '1px solid var(--border)', borderRadius: '6px', padding: '0 0.6rem', fontSize: '0.85rem' }}
               />
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 500, color: '#374151', marginBottom: '0.25rem' }}>Last name *</label>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 500, color: 'var(--foreground)', marginBottom: '0.25rem' }}>
+                {t('patients.last_name')} *
+              </label>
               <input
                 required
                 type="text"
                 value={newPatient.lastName}
                 onChange={e => setNewPatient({ ...newPatient, lastName: e.target.value })}
-                style={{ width: '100%', height: '38px', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '0 0.6rem', fontSize: '0.85rem' }}
+                style={{ width: '100%', height: '38px', border: '1px solid var(--border)', borderRadius: '6px', padding: '0 0.6rem', fontSize: '0.85rem' }}
               />
             </div>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 500, color: '#374151', marginBottom: '0.25rem' }}>Date of birth</label>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 500, color: 'var(--foreground)', marginBottom: '0.25rem' }}>
+                {t('patients.dob')}
+              </label>
               <input
                 type="date"
                 value={newPatient.dateOfBirth}
                 onChange={e => setNewPatient({ ...newPatient, dateOfBirth: e.target.value })}
-                style={{ width: '100%', height: '38px', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '0 0.6rem', fontSize: '0.85rem' }}
+                style={{ width: '100%', height: '38px', border: '1px solid var(--border)', borderRadius: '6px', padding: '0 0.6rem', fontSize: '0.85rem' }}
               />
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 500, color: '#374151', marginBottom: '0.25rem' }}>Sex</label>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 500, color: 'var(--foreground)', marginBottom: '0.25rem' }}>
+                {t('patients.sex')}
+              </label>
               <select
                 value={newPatient.sex}
                 onChange={e => setNewPatient({ ...newPatient, sex: e.target.value })}
-                style={{ width: '100%', height: '38px', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '0 0.6rem', fontSize: '0.85rem', backgroundColor: 'white' }}
+                style={{ width: '100%', height: '38px', border: '1px solid var(--border)', borderRadius: '6px', padding: '0 0.6rem', fontSize: '0.85rem', backgroundColor: 'var(--card)' }}
               >
-                <option value="Female">Female</option>
-                <option value="Male">Male</option>
-                <option value="Other">Other</option>
+                <option value="Female">{t('patients.sex_female')}</option>
+                <option value="Male">{t('patients.sex_male')}</option>
+                <option value="Other">{t('patients.sex_other')}</option>
               </select>
             </div>
           </div>
 
           <div>
-            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 500, color: '#374151', marginBottom: '0.25rem' }}>Phone number</label>
+            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 500, color: 'var(--foreground)', marginBottom: '0.25rem' }}>
+              {t('patients.phone')}
+            </label>
             <input
               type="text"
               placeholder="+1-555-0199"
               value={newPatient.phone}
               onChange={e => setNewPatient({ ...newPatient, phone: e.target.value })}
-              style={{ width: '100%', height: '38px', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '0 0.6rem', fontSize: '0.85rem' }}
+              style={{ width: '100%', height: '38px', border: '1px solid var(--border)', borderRadius: '6px', padding: '0 0.6rem', fontSize: '0.85rem' }}
             />
           </div>
 
           <div>
-            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 500, color: '#374151', marginBottom: '0.25rem' }}>Community / Address</label>
+            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 500, color: 'var(--foreground)', marginBottom: '0.25rem' }}>
+              {t('patients.address')}
+            </label>
             <input
               type="text"
-              placeholder="Riverside Sector 4"
+              placeholder="Riverside Community"
               value={newPatient.address}
               onChange={e => setNewPatient({ ...newPatient, address: e.target.value })}
-              style={{ width: '100%', height: '38px', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '0 0.6rem', fontSize: '0.85rem' }}
+              style={{ width: '100%', height: '38px', border: '1px solid var(--border)', borderRadius: '6px', padding: '0 0.6rem', fontSize: '0.85rem' }}
             />
           </div>
         </form>

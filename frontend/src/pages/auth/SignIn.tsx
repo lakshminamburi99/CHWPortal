@@ -2,15 +2,10 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../App';
+import { LanguageSelector } from '../../components/LanguageSelector';
+import { API_BASE } from '../../config';
 
 // ─── Icon helpers ────────────────────────────────────────────────────────────
-const GlobeIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" />
-    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-  </svg>
-);
-
 const HelpIcon = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <circle cx="12" cy="12" r="10" /><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /><line x1="12" y1="17" x2="12.01" y2="17" />
@@ -56,62 +51,40 @@ const MicIcon = () => (
 const demoAccounts = [
   {
     role: 'CHW' as const,
-    label: 'Community health worker',
     email: 'demo-chw@example.com',
     workspace: 'Field workspace: assessments, referrals, follow-ups',
-    scope: 'Scope: Own assigned caseload',
   },
   {
     role: 'SUPERVISOR' as const,
-    label: 'Supervisor',
     email: 'demo-supervisor@example.com',
     workspace: 'Supervisor workspace: triage, case review, coaching',
-    scope: 'Scope: Own CHW team and their patients',
   },
   {
     role: 'PROGRAMME_MANAGER' as const,
-    label: 'Programme manager',
     email: 'demo-manager@example.com',
     workspace: 'Programme workspace: regions, districts, reports',
-    scope: 'Scope: Assigned regions and districts',
   },
   {
     role: 'REGIONAL_ADMIN' as const,
-    label: 'Regional administrator',
     email: 'demo-regional-admin@example.com',
-    workspace: 'Administration workspace: accounts and org units, no clinical data',
-    scope: 'Scope: All org units in the assigned region',
+    workspace: 'Administration workspace: accounts and org units',
   },
   {
     role: 'SUPER_ADMIN' as const,
-    label: 'Super administrator',
     email: 'demo-admin@example.com',
-    workspace: 'Administration workspace: platform-wide configuration',
-    scope: 'Scope: Entire platform, all regions',
+    workspace: 'Administration workspace: platform configuration',
   },
 ];
 
-const langOptions = [
-  { value: 'en', label: 'English', abbr: 'EN' },
-  { value: 'es', label: 'Español', abbr: 'ES' },
-  { value: 'ar', label: 'العربية', abbr: 'AR' },
-  { value: 'hi', label: 'हिन्दी', abbr: 'HI' },
-];
-
-import { API_BASE } from '../../config';
-
 // ─── Component ───────────────────────────────────────────────────────────────
 export const SignIn = () => {
-  const { i18n } = useTranslation();
+  const { t } = useTranslation();
   const { login } = useAuth();
   const navigate = useNavigate();
-  const [showLangMenu, setShowLangMenu] = useState(false);
-  const [email, setEmail] = useState('demo-admin@example.com');
+  const [email, setEmail] = useState('demo-chw@example.com');
   const [password, setPassword] = useState('demo');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-
-  const currentLang = langOptions.find(l => l.value === i18n.language) || langOptions[0];
 
   const performLogin = async (targetEmail: string, targetPassword: string) => {
     setLoading(true);
@@ -156,7 +129,7 @@ export const SignIn = () => {
   return (
     <div style={{ display: 'flex', height: '100vh', width: '100%', fontFamily: 'Plus Jakarta Sans, system-ui, sans-serif' }}>
 
-      {/* ── LEFT PANEL ── */}
+      {/* ── LEFT / HERO PANEL ── */}
       <div style={{
         flex: '0 0 52%',
         background: 'linear-gradient(160deg, #0c1220 0%, #0f172a 60%, #111827 100%)',
@@ -179,8 +152,8 @@ export const SignIn = () => {
             <CompassIcon />
           </div>
           <div>
-            <div style={{ fontWeight: 700, fontSize: '1.05rem', lineHeight: 1.2, color: 'white' }}>Care Compass</div>
-            <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1 }}>Community health worker support platform</div>
+            <div style={{ fontWeight: 700, fontSize: '1.05rem', lineHeight: 1.2, color: 'white' }}>{t('app_name')}</div>
+            <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1 }}>{t('app_subtitle')}</div>
           </div>
         </div>
 
@@ -189,27 +162,25 @@ export const SignIn = () => {
 
         {/* Main content */}
         <div style={{ padding: '0 2.5rem 2.5rem' }}>
-
-
           <h1 style={{
             fontSize: '2.4rem', fontWeight: 800, lineHeight: 1.2,
             marginBottom: '1rem', letterSpacing: '-0.02em',
             color: 'white',
           }}>
-            Frontline care, backed<br />by clinical precision.
+            {t('auth.tagline_headline')}
           </h1>
 
-          <p style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.55)', marginBottom: '2rem', lineHeight: 1.6, maxWidth: '440px' }}>
-            Register patients, run structured assessments with voice-assisted entry, and act on protocol-based risk flags — while supervisors review priority cases live.
+          <p style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.65)', marginBottom: '2rem', lineHeight: 1.6, maxWidth: '460px' }}>
+            {t('auth.tagline_desc')}
           </p>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
             {[
-              { icon: <ClipboardIcon />, title: 'Guided assessments', sub: 'One question at a time with help text.' },
-              { icon: <FlagIcon />, title: 'Protocol risk flags', sub: 'Clinical engine results, explained.' },
-              { icon: <UsersCheckIcon />, title: 'Supervisor review', sub: 'Priority cases escalated in real time.' },
-              { icon: <MicIcon />, title: 'Voice & 4 languages', sub: 'English, Spanish, Arabic (RTL), Hindi.' },
-            ].map(f => (
+              { icon: <ClipboardIcon />, title: t('auth.feat_assessments_title'), sub: t('auth.feat_assessments_sub') },
+              { icon: <FlagIcon />, title: t('auth.feat_risk_title'), sub: t('auth.feat_risk_sub') },
+              { icon: <UsersCheckIcon />, title: t('auth.feat_supervisor_title'), sub: t('auth.feat_supervisor_sub') },
+              { icon: <MicIcon />, title: t('auth.feat_voice_title'), sub: t('auth.feat_voice_sub') },
+            ].map((f) => (
               <div key={f.title} style={{
                 padding: '1rem',
                 backgroundColor: 'rgba(255,255,255,0.06)',
@@ -217,16 +188,16 @@ export const SignIn = () => {
                 borderRadius: '10px',
                 backdropFilter: 'blur(4px)',
               }}>
-                <div style={{ color: 'rgba(255,255,255,0.5)', marginBottom: '0.4rem' }}>{f.icon}</div>
+                <div style={{ color: 'rgba(255,255,255,0.6)', marginBottom: '0.4rem' }}>{f.icon}</div>
                 <div style={{ fontWeight: 600, fontSize: '0.82rem', marginBottom: '0.15rem', color: 'white' }}>{f.title}</div>
-                <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.45)', lineHeight: 1.4 }}>{f.sub}</div>
+                <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.4 }}>{f.sub}</div>
               </div>
             ))}
           </div>
         </div>
       </div>
 
-      {/* ── RIGHT PANEL ── */}
+      {/* ── RIGHT / FORM PANEL ── */}
       <div style={{
         flex: 1,
         backgroundColor: '#f8fafc',
@@ -234,54 +205,18 @@ export const SignIn = () => {
         flexDirection: 'column',
         overflowY: 'auto',
       }}>
-        {/* Top-right language selector */}
+        {/* Top language selector */}
         <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '1.25rem 1.75rem' }}>
-          <div style={{ position: 'relative' }}>
-            <button
-              onClick={() => setShowLangMenu(p => !p)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '0.4rem',
-                padding: '0.4rem 0.75rem', borderRadius: '6px',
-                border: '1px solid #e2e8f0', backgroundColor: 'white',
-                fontSize: '0.82rem', fontWeight: 500, color: '#334155',
-                cursor: 'pointer', fontFamily: 'inherit',
-              }}
-            >
-              <GlobeIcon />
-              {currentLang.label} <span style={{ color: '#94a3b8', fontWeight: 700 }}>{currentLang.abbr}</span>
-            </button>
-            {showLangMenu && (
-              <div style={{
-                position: 'absolute', right: 0, top: 'calc(100% + 6px)',
-                backgroundColor: 'white', border: '1px solid #e2e8f0',
-                borderRadius: '8px', boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
-                zIndex: 100, minWidth: '140px', overflow: 'hidden',
-              }}>
-                {langOptions.map(l => (
-                  <button
-                    key={l.value}
-                    onClick={() => { i18n.changeLanguage(l.value); setShowLangMenu(false); }}
-                    style={{
-                      display: 'block', width: '100%', textAlign: 'left',
-                      padding: '0.6rem 1rem', fontSize: '0.85rem',
-                      backgroundColor: l.value === i18n.language ? '#f1f5f9' : 'transparent',
-                      fontWeight: l.value === i18n.language ? 600 : 400,
-                      border: 'none', cursor: 'pointer', color: '#1e293b', fontFamily: 'inherit',
-                    }}
-                  >
-                    {l.label}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+          <LanguageSelector variant="dropdown" />
         </div>
 
         {/* Form area */}
         <div style={{ flex: 1, padding: '0 2rem 2rem', maxWidth: '440px', width: '100%', margin: '0 auto' }}>
-          <h2 style={{ fontSize: '1.75rem', fontWeight: 700, color: '#0f172a', marginBottom: '0.35rem' }}>Sign in</h2>
+          <h2 style={{ fontSize: '1.75rem', fontWeight: 700, color: '#0f172a', marginBottom: '0.35rem' }}>
+            {t('auth.sign_in')}
+          </h2>
           <p style={{ fontSize: '0.875rem', color: '#64748b', marginBottom: '1.75rem' }}>
-            Authenticates directly against the FastAPI / Argon2id security layer.
+            {t('auth.sign_in_subtitle')}
           </p>
 
           {error && (
@@ -296,7 +231,7 @@ export const SignIn = () => {
           <form onSubmit={handleSignIn} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <div>
               <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 500, color: '#374151', marginBottom: '0.35rem' }}>
-                Email or username
+                {t('auth.email_label')}
               </label>
               <input
                 id="email"
@@ -314,7 +249,7 @@ export const SignIn = () => {
             </div>
             <div>
               <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 500, color: '#374151', marginBottom: '0.35rem' }}>
-                Password
+                {t('auth.password_label')}
               </label>
               <input
                 id="password"
@@ -343,13 +278,15 @@ export const SignIn = () => {
                 boxShadow: '0 2px 8px rgba(15,23,42,0.3)',
               }}
             >
-              {loading ? 'Authenticating…' : 'Sign in'}
+              {loading ? t('auth.authenticating') : t('auth.sign_in')}
             </button>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.25rem' }}>
-              <a href="#" style={{ fontSize: '0.82rem', color: '#3b82f6', textDecoration: 'none' }}>Forgot password</a>
+              <a href="#" style={{ fontSize: '0.82rem', color: '#3b82f6', textDecoration: 'none' }}>
+                {t('common.forgot_password')}
+              </a>
               <a href="#" style={{ fontSize: '0.82rem', color: '#3b82f6', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                <HelpIcon /> Need help?
+                <HelpIcon /> {t('common.need_help')}
               </a>
             </div>
           </form>
@@ -361,9 +298,11 @@ export const SignIn = () => {
               borderRadius: '12px', overflow: 'hidden',
             }}>
               <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid #f1f5f9' }}>
-                <h3 style={{ fontWeight: 700, fontSize: '0.9rem', color: '#0f172a', marginBottom: '0.25rem' }}>Demo accounts</h3>
+                <h3 style={{ fontWeight: 700, fontSize: '0.9rem', color: '#0f172a', marginBottom: '0.25rem' }}>
+                  {t('auth.demo_accounts_title')}
+                </h3>
                 <p style={{ fontSize: '0.75rem', color: '#64748b', lineHeight: 1.5 }}>
-                  Authenticates with real Argon2id hash against backend API. Password: <strong>demo</strong>.
+                  {t('auth.demo_accounts_desc')}
                 </p>
               </div>
 
@@ -378,9 +317,15 @@ export const SignIn = () => {
                   }}
                 >
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 600, fontSize: '0.82rem', color: '#0f172a', marginBottom: '0.15rem' }}>{acct.label}</div>
-                    <div style={{ fontSize: '0.72rem', color: '#64748b', marginBottom: '0.1rem' }}>{acct.email}</div>
-                    <div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>{acct.workspace}</div>
+                    <div style={{ fontWeight: 600, fontSize: '0.82rem', color: '#0f172a', marginBottom: '0.15rem' }}>
+                      {t(`roles.${acct.role}`)}
+                    </div>
+                    <div style={{ fontSize: '0.72rem', color: '#64748b', marginBottom: '0.1rem' }}>
+                      {acct.email}
+                    </div>
+                    <div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
+                      {acct.workspace}
+                    </div>
                   </div>
                   <button
                     onClick={() => handleDemoLogin(acct.email)}
@@ -391,7 +336,7 @@ export const SignIn = () => {
                       cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0,
                     }}
                   >
-                    Use
+                    {t('common.use')}
                   </button>
                 </div>
               ))}
@@ -403,3 +348,4 @@ export const SignIn = () => {
     </div>
   );
 };
+

@@ -199,3 +199,47 @@ img, svg, video {
   transition: border-color var(--transition-fast);
 }
 .input:focus { border-color: var(--ring); box-shadow: 0 0 0 3px rgba(107,142,200,0.15); }
+
+/* ──────────────────────────────────────────────────────────────
+   RTL (RIGHT-TO-LEFT) LOCALIZATION & STYLES (العربية)
+   ────────────────────────────────────────────────────────────── */
+[dir="rtl"] {
+  text-align: right;
+  direction: rtl;
+}
+
+[dir="rtl"] table {
+  text-align: right;
+}
+
+[dir="rtl"] th,
+[dir="rtl"] td {
+  text-align: right;
+}
+
+[dir="rtl"] input[type="text"],
+[dir="rtl"] input[type="search"],
+[dir="rtl"] textarea {
+  text-align: right;
+}
+
+/* Numeric / email inputs keep left-to-right LTR data entry */
+[dir="rtl"] input[type="email"],
+[dir="rtl"] input[type="password"],
+[dir="rtl"] input[type="tel"],
+[dir="rtl"] input[type="number"] {
+  direction: ltr;
+  text-align: left;
+}
+
+/* Directional Icons */
+[dir="rtl"] .icon-directional {
+  transform: scaleX(-1);
+}
+
+/* Fade in animation */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
