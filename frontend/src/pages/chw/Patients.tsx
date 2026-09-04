@@ -263,9 +263,23 @@ export const PatientsPage = () => {
                     {formatDate(p.lastVisit, i18n.language)}
                   </td>
                   <td style={{ padding: '0.75rem 1rem' }}>
-                    <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); setSelectedPatient(p); }}>
-                      {t('common.view')}
-                    </Button>
+                    <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'flex-end' }}>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          window.dispatchEvent(new CustomEvent('open_cwstbot_patient', { detail: { patientId: p.id, patientName: p.name } }));
+                        }}
+                        title="Consult Multi-Agent Swarm for this patient"
+                        style={{ borderColor: '#38bdf8', color: '#0284c7', backgroundColor: '#f0f9ff' }}
+                      >
+                        🤖 Swarm
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); setSelectedPatient(p); }}>
+                        {t('common.view')}
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -415,6 +429,15 @@ export const PatientsPage = () => {
       footer={<>
         <Button variant="outline" onClick={() => setSelectedPatient(null)}>
           {t('common.close')}
+        </Button>
+        <Button
+          variant="outline"
+          style={{ borderColor: '#38bdf8', color: '#0284c7', backgroundColor: '#f0f9ff', fontWeight: 600 }}
+          onClick={() => {
+            window.dispatchEvent(new CustomEvent('open_cwstbot_patient', { detail: { patientId: selectedPatient!.id, patientName: selectedPatient!.name } }));
+          }}
+        >
+          🤖 Consult CWSTbot Swarm
         </Button>
         <Button variant="outline" onClick={() => openEditModal(selectedPatient!)}>
           {t('common.edit')}

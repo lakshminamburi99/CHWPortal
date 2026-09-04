@@ -28,16 +28,61 @@ class GCPDeepAgentService:
     @staticmethod
     def tool_get_patient_history(patient_id: str, db_session=None) -> Dict[str, Any]:
         """Tool 2: Query EHR patient history & vitals trends."""
+        db = db_session
+        should_close = False
+        if db is None:
+            try:
+                from app.db.session import SessionLocal
+                db = SessionLocal()
+                should_close = True
+            except Exception:
+                db = None
+
+        patient_name = "Ahmed Robinson"
+        age_months = 24
+        chronic_conditions = ["Mild Asthma"]
+        recent_assessments = [
+            {"date": "2026-08-15", "risk_level": "LOW", "chief_complaint": "Routine wellness check"},
+            {"date": "2026-08-28", "risk_level": "MEDIUM", "chief_complaint": "Fever & cough"}
+        ]
+        vitals_baseline = {"temp_c": 37.1, "heart_rate": 105, "resp_rate": 32}
+
+        try:
+            if db:
+                from app.models.patient import PatientModel
+                from app.models.clinical import CaseRecordModel
+                p = db.query(PatientModel).filter(
+                    (PatientModel.id == patient_id) |
+                    (PatientModel.mrn == patient_id) |
+                    (PatientModel.external_mrn == patient_id)
+                ).first()
+                if p:
+                    patient_name = f"{p.first_name} {p.last_name}"
+                    age_months = (p.age or 2) * 12
+                    cases = db.query(CaseRecordModel).filter(CaseRecordModel.patient_id == p.id).order_by(CaseRecordModel.created_at.desc()).limit(3).all()
+                    if cases:
+                        recent_assessments = [
+                            {
+                                "date": c.created_at or "2026-08-28",
+                                "risk_level": c.risk_level or "LOW",
+                                "chief_complaint": c.chw_notes or "Clinical Assessment"
+                            } for c in cases
+                        ]
+                        if cases[0].vitals and isinstance(cases[0].vitals, dict):
+                            vitals_baseline = cases[0].vitals
+        except Exception as err:
+            print(f"Deep agent patient history lookup warning: {err}")
+        finally:
+            if should_close and db:
+                db.close()
+
         return {
             "patient_id": patient_id,
-            "patient_name": "Ahmed Robinson",
-            "age_months": 24,
-            "chronic_conditions": ["Mild Asthma"],
-            "recent_assessments": [
-                {"date": "2026-08-15", "risk_level": "LOW", "chief_complaint": "Routine wellness check"},
-                {"date": "2026-08-28", "risk_level": "MEDIUM", "chief_complaint": "Fever & cough"}
-            ],
-            "vitals_baseline": {"temp_c": 37.1, "heart_rate": 105, "resp_rate": 32}
+            "patient_name": patient_name,
+            "age_months": age_months,
+            "chronic_conditions": chronic_conditions,
+            "recent_assessments": recent_assessments,
+            "vitals_baseline": vitals_baseline
         }
 
     @staticmethod
@@ -109,7 +154,7 @@ class GCPDeepAgentService:
     # ── Multi-Tool Reasoning & Agent Execution Loop ─────────────────────────────
 
     @classmethod
-    def execute_agent_query(cls, query: str, patient_id: Optional[str] = None) -> Dict[str, Any]:
+    def execute_agent_query(cls, query: str, patient_id: Optional[str] = None, db_session=None) -> Dict[str, Any]:
         """
         Executes a multi-tool ReAct reasoning query against GCP Agent backend.
         """
@@ -120,7 +165,7 @@ class GCPDeepAgentService:
         tool_logs.append({
             "tool": "get_patient_history",
             "input": {"patient_id": target_pid},
-            "output": cls.tool_get_patient_history(target_pid)
+            "output": cls.tool_get_patient_history(target_pid, db_session=db_session)
         })
 
         # Step 2: Query Protocol Evaluation Tool

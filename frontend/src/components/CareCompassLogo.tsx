@@ -18,16 +18,26 @@ const sizeMap: Record<string, number> = {
   xl: 64,
 };
 
+/**
+ * CareCompassMark — Creative, Relatable & Iconic Community Healthcare Emblem
+ * 
+ * Visual Elements:
+ * 1. Nurturing Heart Wings (Community Care, empathy & protective maternal/family embrace)
+ * 2. Guiding Compass Rose (Frontline navigation, orientation & outreach)
+ * 3. Clinical Cross & Vital Life Pulse (Medical safety, clinical triage & vital signs)
+ * 4. Illuminated Central Beacon (Hope & community health equity)
+ */
 export const CareCompassMark: React.FC<{ size?: number; className?: string; style?: React.CSSProperties }> = ({
   size = 36,
   className,
   style,
 }) => {
   const uid = React.useId().replace(/:/g, '');
-  const gradPrimary = `cc-grad-primary-${uid}`;
-  const gradSecondary = `cc-grad-secondary-${uid}`;
-  const gradAccent = `cc-grad-accent-${uid}`;
-  const glowFilter = `cc-glow-${uid}`;
+  const gradCyan = `cc-cyan-${uid}`;
+  const gradEmerald = `cc-emerald-${uid}`;
+  const gradHeart = `cc-heart-${uid}`;
+  const gradStar = `cc-star-${uid}`;
+  const glowId = `cc-glow-${uid}`;
 
   return (
     <svg
@@ -38,121 +48,130 @@ export const CareCompassMark: React.FC<{ size?: number; className?: string; styl
       xmlns="http://www.w3.org/2000/svg"
       className={className}
       style={{ display: 'inline-block', verticalAlign: 'middle', flexShrink: 0, ...style }}
-      aria-label="Care Compass Logo"
+      aria-label="Care Compass Healthcare Emblem"
     >
       <defs>
-        {/* Vibrant Medical/Navigation Gradients */}
-        <linearGradient id={gradPrimary} x1="10" y1="10" x2="90" y2="90" gradientUnits="userSpaceOnUse">
+        {/* Ocean to Sky Medical Gradient */}
+        <linearGradient id={gradCyan} x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
           <stop offset="0%" stopColor="#38bdf8" />
           <stop offset="50%" stopColor="#0284c7" />
-          <stop offset="100%" stopColor="#0f766e" />
+          <stop offset="100%" stopColor="#0369a1" />
         </linearGradient>
 
-        <linearGradient id={gradSecondary} x1="90" y1="10" x2="10" y2="90" gradientUnits="userSpaceOnUse">
+        {/* Vital Health & Healing Leaf Gradient */}
+        <linearGradient id={gradEmerald} x1="100" y1="0" x2="0" y2="100" gradientUnits="userSpaceOnUse">
           <stop offset="0%" stopColor="#34d399" />
-          <stop offset="100%" stopColor="#0284c7" />
+          <stop offset="50%" stopColor="#10b981" />
+          <stop offset="100%" stopColor="#047857" />
         </linearGradient>
 
-        <linearGradient id={gradAccent} x1="50" y1="0" x2="50" y2="100" gradientUnits="userSpaceOnUse">
+        {/* Compass Guiding Star Radiant Gradient */}
+        <linearGradient id={gradStar} x1="50" y1="5" x2="50" y2="95" gradientUnits="userSpaceOnUse">
           <stop offset="0%" stopColor="#67e8f9" />
+          <stop offset="40%" stopColor="#38bdf8" />
+          <stop offset="100%" stopColor="#34d399" />
+        </linearGradient>
+
+        {/* Warm Caring Heart Gradient */}
+        <linearGradient id={gradHeart} x1="20" y1="20" x2="80" y2="80" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#0ea5e9" />
           <stop offset="100%" stopColor="#10b981" />
         </linearGradient>
 
-        {/* Subtle Soft Glow */}
-        <filter id={glowFilter} x="-20%" y="-20%" width="140%" height="140%" filterUnits="userSpaceOnUse">
+        {/* Soft Clinical Bloom Glow */}
+        <filter id={glowId} x="-20%" y="-20%" width="140%" height="140%" filterUnits="userSpaceOnUse">
           <feGaussianBlur stdDeviation="2.5" result="blur" />
           <feComposite in="SourceGraphic" in2="blur" operator="over" />
         </filter>
       </defs>
 
-      {/* Outer Compass Coordinate Ring */}
-      <circle cx="50" cy="50" r="44" stroke={`url(#${gradPrimary})`} strokeWidth="2.5" strokeOpacity="0.4" strokeDasharray="2 3.5" />
-      <circle cx="50" cy="50" r="47.5" stroke={`url(#${gradPrimary})`} strokeWidth="1" strokeOpacity="0.25" />
+      {/* ── Outer Protective Orbit Ring (Precision Coordinate Markers) ── */}
+      <circle cx="50" cy="50" r="45" stroke={`url(#${gradCyan})`} strokeWidth="2" strokeOpacity="0.35" strokeDasharray="3 4" />
+      <circle cx="50" cy="50" r="48" stroke={`url(#${gradEmerald})`} strokeWidth="1" strokeOpacity="0.2" />
 
-      {/* 4 Cardinal Compass Tick Markers (N, E, S, W) */}
-      <line x1="50" y1="2" x2="50" y2="9" stroke="#38bdf8" strokeWidth="2.5" strokeLinecap="round" />
-      <line x1="50" y1="91" x2="50" y2="98" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" />
-      <line x1="2" y1="50" x2="9" y2="50" stroke="#0284c7" strokeWidth="2.5" strokeLinecap="round" />
-      <line x1="91" y1="50" x2="98" y2="50" stroke="#34d399" strokeWidth="2.5" strokeLinecap="round" />
+      {/* 4 Cardinal Navigation Points (N, E, S, W Beacons) */}
+      <circle cx="50" cy="5" r="3.5" fill="#38bdf8" filter={`url(#${glowId})`} />
+      <circle cx="50" cy="5" r="1.75" fill="#ffffff" />
 
-      {/* Intermediate Navigation Beacons */}
-      <circle cx="21" cy="21" r="1.5" fill="#38bdf8" fillOpacity="0.6" />
-      <circle cx="79" cy="21" r="1.5" fill="#38bdf8" fillOpacity="0.6" />
-      <circle cx="21" cy="79" r="1.5" fill="#10b981" fillOpacity="0.6" />
-      <circle cx="79" cy="79" r="1.5" fill="#10b981" fillOpacity="0.6" />
+      <circle cx="95" cy="50" r="3" fill="#34d399" />
+      <circle cx="95" cy="50" r="1.5" fill="#ffffff" />
 
-      {/* Inner Protective Halo */}
-      <circle cx="50" cy="50" r="32" fill={`url(#${gradPrimary})`} fillOpacity="0.08" stroke={`url(#${gradSecondary})`} strokeWidth="1.5" strokeOpacity="0.35" />
+      <circle cx="50" cy="95" r="3" fill="#10b981" />
+      <circle cx="50" cy="95" r="1.5" fill="#ffffff" />
 
-      {/* ── Care & Compass Core: Medical Cross + Compass Star Hybrid ── */}
-      
-      {/* North Pointer (Guiding Star Apex) */}
-      <path
-        d="M50 12 L56 38 L50 44 L44 38 Z"
-        fill={`url(#${gradAccent})`}
-        filter={`url(#${glowFilter})`}
-      />
-      {/* North Facet Highlight */}
-      <path
-        d="M50 12 L56 38 L50 44 Z"
-        fill="#ffffff"
-        fillOpacity="0.3"
-      />
+      <circle cx="5" cy="50" r="3" fill="#0284c7" />
+      <circle cx="5" cy="50" r="1.5" fill="#ffffff" />
 
-      {/* South Pointer */}
+      {/* ── Primary Emblem: Embracing Caring Hands & Heart Ribbon ── */}
+      {/* Left Wing / Caring Embrace Hand */}
       <path
-        d="M50 88 L44 62 L50 56 L56 62 Z"
-        fill={`url(#${gradSecondary})`}
-      />
-      {/* South Facet Highlight */}
-      <path
-        d="M50 88 L44 62 L50 56 Z"
-        fill="#ffffff"
-        fillOpacity="0.2"
-      />
-
-      {/* West Pointer (Embrace Wing) */}
-      <path
-        d="M12 50 L38 44 L44 50 L38 56 Z"
-        fill={`url(#${gradPrimary})`}
-      />
-      {/* West Facet Highlight */}
-      <path
-        d="M12 50 L38 44 L44 50 Z"
-        fill="#ffffff"
-        fillOpacity="0.25"
-      />
-
-      {/* East Pointer (Embrace Wing) */}
-      <path
-        d="M88 50 L62 56 L56 50 L62 44 Z"
-        fill={`url(#${gradSecondary})`}
-      />
-      {/* East Facet Highlight */}
-      <path
-        d="M88 50 L62 56 L56 50 Z"
-        fill="#ffffff"
-        fillOpacity="0.25"
-      />
-
-      {/* Diagonal Support Rays (Subtle 8-Point Rose) */}
-      <path d="M26 26 L39 41 L41 39 Z" fill="#38bdf8" fillOpacity="0.45" />
-      <path d="M74 26 L61 41 L59 39 Z" fill="#38bdf8" fillOpacity="0.45" />
-      <path d="M26 74 L39 59 L41 61 Z" fill="#10b981" fillOpacity="0.45" />
-      <path d="M74 74 L61 59 L59 61 Z" fill="#10b981" fillOpacity="0.45" />
-
-      {/* ── Central Clinical Heartbeat / Vital Pulse Waveform ── */}
-      <path
-        d="M34 50 L42 50 L46 41 L50 59 L54 44 L57 53 L60 50 L66 50"
-        stroke="#ffffff"
-        strokeWidth="2.75"
+        d="M50 84 C32 72 16 56 16 38 C16 24 27 15 39 15 C45 15 48 18 50 22 C52 18 55 15 61 15 C73 15 84 24 84 38 C84 56 68 72 50 84 Z"
+        fill={`url(#${gradHeart})`}
+        fillOpacity="0.12"
+        stroke={`url(#${gradCyan})`}
+        strokeWidth="3.5"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
 
-      {/* Central Beacon Node */}
-      <circle cx="50" cy="50" r="3" fill="#ffffff" filter={`url(#${glowFilter})`} />
-      <circle cx="50" cy="50" r="1.5" fill="#0284c7" />
+      {/* ── Dynamic Compass Star & Clinical Cross Core ── */}
+      {/* North Apex Needle (Guiding Star) */}
+      <path
+        d="M50 10 L55 36 L50 43 L45 36 Z"
+        fill={`url(#${gradStar})`}
+        filter={`url(#${glowId})`}
+      />
+      <path
+        d="M50 10 L55 36 L50 43 Z"
+        fill="#ffffff"
+        fillOpacity="0.45"
+      />
+
+      {/* South Arrow Base */}
+      <path
+        d="M50 78 L45 57 L50 50 L55 57 Z"
+        fill={`url(#${gradEmerald})`}
+      />
+      <path
+        d="M50 78 L45 57 L50 50 Z"
+        fill="#ffffff"
+        fillOpacity="0.25"
+      />
+
+      {/* West Embrace Arm */}
+      <path
+        d="M22 47 L43 42 L50 47 L43 52 Z"
+        fill={`url(#${gradCyan})`}
+      />
+      <path
+        d="M22 47 L43 42 L50 47 Z"
+        fill="#ffffff"
+        fillOpacity="0.3"
+      />
+
+      {/* East Embrace Arm */}
+      <path
+        d="M78 47 L57 52 L50 47 L57 42 Z"
+        fill={`url(#${gradEmerald})`}
+      />
+      <path
+        d="M78 47 L57 42 L50 47 Z"
+        fill="#ffffff"
+        fillOpacity="0.3"
+      />
+
+      {/* ── Vital Signs Pulse Waveform across Horizon ── */}
+      <path
+        d="M28 47 L36 47 L40 37 L45 57 L49 41 L53 51 L56 47 L72 47"
+        stroke="#ffffff"
+        strokeWidth="3"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+
+      {/* Central Radiating Beacon Node */}
+      <circle cx="50" cy="47" r="4.5" fill="#ffffff" filter={`url(#${glowId})`} />
+      <circle cx="50" cy="47" r="2.5" fill="#0284c7" />
     </svg>
   );
 };
@@ -173,7 +192,7 @@ export const CareCompassLogo: React.FC<CareCompassLogoProps> = ({
     return <CareCompassMark size={pixelSize} className={className} style={style} />;
   }
 
-  // Render icon inside a polished, modern container
+  // Render icon inside a container
   if (variant === 'icon') {
     const isSidebar = theme === 'sidebar';
     const isLight = theme === 'light';
@@ -186,18 +205,18 @@ export const CareCompassLogo: React.FC<CareCompassLogoProps> = ({
           height: `${pixelSize + 8}px`,
           borderRadius: `${Math.round(pixelSize * 0.32)}px`,
           background: isLight
-            ? 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)'
+            ? 'linear-gradient(135deg, #f0fdf4 0%, #e0f2fe 100%)'
             : isSidebar
-            ? 'linear-gradient(135deg, rgba(56, 189, 248, 0.18) 0%, rgba(14, 165, 233, 0.08) 100%)'
-            : 'linear-gradient(135deg, #0c4a6e 0%, #0369a1 100%)',
+            ? 'linear-gradient(135deg, rgba(56, 189, 248, 0.22) 0%, rgba(16, 185, 129, 0.15) 100%)'
+            : 'linear-gradient(135deg, #0c4a6e 0%, #065f46 100%)',
           border: isLight
             ? '1px solid #bae6fd'
             : isSidebar
-            ? '1px solid rgba(56, 189, 248, 0.3)'
+            ? '1px solid rgba(56, 189, 248, 0.4)'
             : '1px solid rgba(56, 189, 248, 0.4)',
           boxShadow: isLight
             ? '0 2px 8px rgba(2, 132, 199, 0.12)'
-            : '0 4px 12px rgba(0, 0, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.15)',
+            : '0 4px 14px rgba(0, 0, 0, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.2)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -214,7 +233,7 @@ export const CareCompassLogo: React.FC<CareCompassLogoProps> = ({
   if (variant === 'horizontal') {
     const isSidebar = theme === 'sidebar';
     const textColor = isSidebar ? 'var(--sidebar-foreground, #ffffff)' : theme === 'light' ? '#0f172a' : '#ffffff';
-    const subColor = isSidebar ? 'rgba(255, 255, 255, 0.55)' : theme === 'light' ? '#64748b' : 'rgba(255, 255, 255, 0.65)';
+    const subColor = isSidebar ? 'rgba(255, 255, 255, 0.65)' : theme === 'light' ? '#64748b' : 'rgba(255, 255, 255, 0.7)';
 
     return (
       <div
@@ -234,15 +253,15 @@ export const CareCompassLogo: React.FC<CareCompassLogoProps> = ({
             height: `${pixelSize + 6}px`,
             borderRadius: `${Math.round(pixelSize * 0.28)}px`,
             background: isSidebar
-              ? 'linear-gradient(135deg, rgba(56, 189, 248, 0.18) 0%, rgba(14, 165, 233, 0.08) 100%)'
+              ? 'linear-gradient(135deg, rgba(56, 189, 248, 0.2) 0%, rgba(16, 185, 129, 0.12) 100%)'
               : theme === 'light'
-              ? 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)'
-              : 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
-            border: isSidebar ? '1px solid rgba(56, 189, 248, 0.35)' : '1px solid #bae6fd',
+              ? 'linear-gradient(135deg, #f0fdf4 0%, #e0f2fe 100%)'
+              : 'linear-gradient(135deg, #0284c7 0%, #059669 100%)',
+            border: isSidebar ? '1px solid rgba(56, 189, 248, 0.38)' : '1px solid #bae6fd',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+            boxShadow: '0 2px 10px rgba(0, 0, 0, 0.15)',
             flexShrink: 0,
           }}
         >
@@ -256,7 +275,7 @@ export const CareCompassLogo: React.FC<CareCompassLogoProps> = ({
               fontSize: `${Math.max(14, Math.round(pixelSize * 0.52))}px`,
               lineHeight: 1.15,
               color: textColor,
-              letterSpacing: '-0.02em',
+              letterSpacing: '-0.025em',
               display: 'flex',
               alignItems: 'center',
               gap: '4px',
@@ -310,26 +329,26 @@ export const CareCompassLogo: React.FC<CareCompassLogoProps> = ({
           style={{
             width: `${pixelSize + 12}px`,
             height: `${pixelSize + 12}px`,
-            borderRadius: '14px',
-            background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.2) 0%, rgba(16, 185, 129, 0.1) 100%)',
-            border: '1px solid rgba(56, 189, 248, 0.4)',
+            borderRadius: '16px',
+            background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.25) 0%, rgba(16, 185, 129, 0.18) 100%)',
+            border: '1px solid rgba(56, 189, 248, 0.45)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: '0 8px 24px rgba(2, 132, 199, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.2)',
-            backdropFilter: 'blur(8px)',
+            boxShadow: '0 10px 28px rgba(2, 132, 199, 0.3), inset 0 1px 2px rgba(255, 255, 255, 0.25)',
+            backdropFilter: 'blur(10px)',
           }}
         >
-          <CareCompassMark size={pixelSize} />
+          <CareCompassMark size={pixelSize + 2} />
         </div>
         <div>
           <div
             style={{
               fontWeight: 800,
-              fontSize: '1.45rem',
+              fontSize: '1.55rem',
               lineHeight: 1.15,
               color: '#ffffff',
-              letterSpacing: '-0.025em',
+              letterSpacing: '-0.03em',
             }}
           >
             Care{' '}
@@ -344,7 +363,7 @@ export const CareCompassLogo: React.FC<CareCompassLogoProps> = ({
             </span>
           </div>
           {showSubtitle && (
-            <div style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.55)', fontWeight: 500, marginTop: '2px' }}>
+            <div style={{ fontSize: '0.78rem', color: 'rgba(255, 255, 255, 0.65)', fontWeight: 500, marginTop: '2px' }}>
               {subtitleText}
             </div>
           )}

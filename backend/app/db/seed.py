@@ -145,6 +145,7 @@ DEMO_USERS = [
         "first_name": "John",
         "last_name":  "Smith",
         "role_code":  "CHW",
+        "avatar":     "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=256&auto=format&fit=crop&q=80",
     },
     {
         "id":         "usr-sup-001",
@@ -153,6 +154,7 @@ DEMO_USERS = [
         "first_name": "Amara",
         "last_name":  "Okafor",
         "role_code":  "SUPERVISOR",
+        "avatar":     "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=256&auto=format&fit=crop&q=80",
     },
     {
         "id":         "usr-mgr-001",
@@ -161,6 +163,7 @@ DEMO_USERS = [
         "first_name": "Daniel",
         "last_name":  "Whitfield",
         "role_code":  "PROGRAMME_MANAGER",
+        "avatar":     "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=256&auto=format&fit=crop&q=80",
     },
     {
         "id":         "usr-reg-001",
@@ -169,6 +172,7 @@ DEMO_USERS = [
         "first_name": "Rachel",
         "last_name":  "Summers",
         "role_code":  "REGIONAL_ADMIN",
+        "avatar":     "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=256&auto=format&fit=crop&q=80",
     },
     {
         "id":         "usr-adm-001",
@@ -177,6 +181,7 @@ DEMO_USERS = [
         "first_name": "Admin",
         "last_name":  "User",
         "role_code":  "SUPER_ADMIN",
+        "avatar":     "https://images.unsplash.com/photo-1537368910025-700350fe46c7?w=256&auto=format&fit=crop&q=80",
     },
 ]
 
@@ -254,6 +259,7 @@ def seed_db():
                     first_name=ud["first_name"],
                     last_name=ud["last_name"],
                     display_name=f"{ud['first_name']} {ud['last_name']}",
+                    avatar=ud.get("avatar"),
                     preferred_language="en",
                     status="ACTIVE",
                     is_email_verified=True,
@@ -676,17 +682,34 @@ def seed_db():
                 db.add(ChwModel(**c))
             db.flush()
 
+        avatar_map = {
+            "demo-chw@example.com": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=256&auto=format&fit=crop&q=80",
+            "demo-supervisor@example.com": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=256&auto=format&fit=crop&q=80",
+            "demo-manager@example.com": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=256&auto=format&fit=crop&q=80",
+            "demo-regional-admin@example.com": "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=256&auto=format&fit=crop&q=80",
+            "demo-admin@example.com": "https://images.unsplash.com/photo-1537368910025-700350fe46c7?w=256&auto=format&fit=crop&q=80",
+        }
+
         if db.query(PlatformUserModel).count() == 0:
             print("[seed] Seeding platform users...")
             p_users_data = [
-                {"id": "usr-chw-001", "name": "John Smith", "email": "demo-chw@example.com", "role": "CHW", "org_unit_id": "FTA", "status": "ACTIVE", "last_sign_in": "2026-08-24 12:00:00", "mfa_enabled": False},
-                {"id": "usr-sup-001", "name": "Amara Okafor", "email": "demo-supervisor@example.com", "role": "SUPERVISOR", "org_unit_id": "RD", "status": "ACTIVE", "last_sign_in": "2026-08-24 11:30:00", "mfa_enabled": True},
-                {"id": "usr-mgr-001", "name": "Daniel Whitfield", "email": "demo-manager@example.com", "role": "PROGRAMME_MANAGER", "org_unit_id": "RHA", "status": "ACTIVE", "last_sign_in": "2026-08-24 10:15:00", "mfa_enabled": True},
-                {"id": "usr-reg-001", "name": "Rachel Summers", "email": "demo-regional-admin@example.com", "role": "REGIONAL_ADMIN", "org_unit_id": "WR", "status": "ACTIVE", "last_sign_in": "2026-08-24 09:00:00", "mfa_enabled": True},
-                {"id": "usr-adm-001", "name": "Admin User", "email": "demo-admin@example.com", "role": "SUPER_ADMIN", "org_unit_id": "RHA", "status": "ACTIVE", "last_sign_in": "2026-08-24 08:30:00", "mfa_enabled": True},
+                {"id": "usr-chw-001", "name": "John Smith", "email": "demo-chw@example.com", "role": "CHW", "org_unit_id": "FTA", "status": "ACTIVE", "last_sign_in": "2026-08-24 12:00:00", "mfa_enabled": False, "avatar": avatar_map["demo-chw@example.com"]},
+                {"id": "usr-sup-001", "name": "Amara Okafor", "email": "demo-supervisor@example.com", "role": "SUPERVISOR", "org_unit_id": "RD", "status": "ACTIVE", "last_sign_in": "2026-08-24 11:30:00", "mfa_enabled": True, "avatar": avatar_map["demo-supervisor@example.com"]},
+                {"id": "usr-mgr-001", "name": "Daniel Whitfield", "email": "demo-manager@example.com", "role": "PROGRAMME_MANAGER", "org_unit_id": "RHA", "status": "ACTIVE", "last_sign_in": "2026-08-24 10:15:00", "mfa_enabled": True, "avatar": avatar_map["demo-manager@example.com"]},
+                {"id": "usr-reg-001", "name": "Rachel Summers", "email": "demo-regional-admin@example.com", "role": "REGIONAL_ADMIN", "org_unit_id": "WR", "status": "ACTIVE", "last_sign_in": "2026-08-24 09:00:00", "mfa_enabled": True, "avatar": avatar_map["demo-regional-admin@example.com"]},
+                {"id": "usr-adm-001", "name": "Admin User", "email": "demo-admin@example.com", "role": "SUPER_ADMIN", "org_unit_id": "RHA", "status": "ACTIVE", "last_sign_in": "2026-08-24 08:30:00", "mfa_enabled": True, "avatar": avatar_map["demo-admin@example.com"]},
             ]
             for pu in p_users_data:
                 db.add(PlatformUserModel(**pu))
+            db.flush()
+        else:
+            # Backfill avatars for existing users if empty
+            for pu in db.query(PlatformUserModel).all():
+                if not pu.avatar and pu.email in avatar_map:
+                    pu.avatar = avatar_map[pu.email]
+            for u in db.query(UserModel).all():
+                if not u.avatar and u.email in avatar_map:
+                    u.avatar = avatar_map[u.email]
             db.flush()
 
         # ── 12. Administrative & Manager Models ───────────────────────────────

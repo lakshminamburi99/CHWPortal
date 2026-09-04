@@ -33,6 +33,7 @@ class UserModel(Base):
     last_name             = Column(String(128), nullable=False)
     display_name          = Column(String(256), nullable=True)
     phone                 = Column(String(32), nullable=True)
+    avatar                = Column(Text, nullable=True)
 
     preferred_language    = Column(String(8), nullable=False, default="en")
     timezone              = Column(String(64), nullable=False, default="UTC")
@@ -162,3 +163,4 @@ class PlatformUserModel(Base):
     status       = Column(String, nullable=False)
     last_sign_in = Column(String, nullable=False)
     mfa_enabled  = Column(Boolean, default=False)
+    avatar       = Column(Text, nullable=True)

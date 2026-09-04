@@ -36,6 +36,7 @@ export const AccountsPage = () => {
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [inspectUser, setInspectUser] = useState<any | null>(null);
+  const accountFileInputRef = React.useRef<HTMLInputElement>(null);
   
   // Invite form state
   const [inviteName, setInviteName] = useState('');
@@ -45,6 +46,61 @@ export const AccountsPage = () => {
   const [invitePhone, setInvitePhone] = useState('');
   const [submittingInvite, setSubmittingInvite] = useState(false);
   const [toast, setToast] = useState('');
+
+  const handleAvatarFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !inspectUser) return;
+
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file (PNG, JPG, WebP, SVG, GIF)');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      alert('File size exceeds 5MB limit. Please choose a smaller image.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      const dataUrl = event.target?.result as string;
+      const token = localStorage.getItem('access_token');
+      try {
+        await fetch(`${API_BASE}/admin/users/${inspectUser.id}/avatar`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({ avatar: dataUrl }),
+        });
+        setUsers(prev => prev.map(u => u.id === inspectUser.id ? { ...u, avatar: dataUrl } : u));
+        setInspectUser((prev: any) => ({ ...prev, avatar: dataUrl }));
+        setToast(`Profile photo updated from local computer for ${inspectUser.name} ✓`);
+        setTimeout(() => setToast(''), 3000);
+      } catch {}
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveAccountAvatar = async (targetUser: any) => {
+    const token = localStorage.getItem('access_token');
+    try {
+      await fetch(`${API_BASE}/admin/users/${targetUser.id}/avatar`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ avatar: null }),
+      });
+      setUsers(prev => prev.map(u => u.id === targetUser.id ? { ...u, avatar: undefined } : u));
+      if (inspectUser && inspectUser.id === targetUser.id) {
+        setInspectUser((prev: any) => ({ ...prev, avatar: undefined }));
+      }
+      setToast(`Profile photo removed for ${targetUser.name} ✓`);
+      setTimeout(() => setToast(''), 3000);
+    } catch {}
+  };
 
   const fetchUsers = () => {
     const token = localStorage.getItem('access_token');
@@ -523,23 +579,82 @@ export const AccountsPage = () => {
       >
         {inspectUser && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+            <input
+              type="file"
+              ref={accountFileInputRef}
+              accept="image/*"
+              style={{ display: 'none' }}
+              onChange={handleAvatarFileChange}
+            />
+
             {/* Header Hero */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
-              <Avatar
-                src={inspectUser.avatar || getAvatarForUser(inspectUser)}
-                name={inspectUser.name}
-                role={inspectUser.role}
-                size="lg"
-                status={inspectUser.status === 'ACTIVE' ? 'online' : 'offline'}
-              />
-              <div style={{ flex: 1 }}>
-                <h3 style={{ margin: '0 0 0.25rem', fontSize: '1.1rem', fontWeight: 700 }}>{inspectUser.name}</h3>
-                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
-                  <Badge variant={roleBadgeVariant[inspectUser.role] || 'info'}>
-                    {roleLabelMap[inspectUser.role] || inspectUser.role}
-                  </Badge>
-                  <Badge variant={statusVariant[inspectUser.status] || 'default'}>{inspectUser.status}</Badge>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', padding: '1rem 1.25rem', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px solid #e2e8f0', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <div style={{ position: 'relative' }}>
+                  <Avatar
+                    src={inspectUser.avatar || getAvatarForUser(inspectUser)}
+                    name={inspectUser.name}
+                    role={inspectUser.role}
+                    size="lg"
+                    status={inspectUser.status === 'ACTIVE' ? 'online' : 'offline'}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => accountFileInputRef.current?.click()}
+                    title="Upload photo from local computer"
+                    style={{
+                      position: 'absolute',
+                      bottom: '-4px',
+                      right: '-4px',
+                      width: '26px',
+                      height: '26px',
+                      borderRadius: '50%',
+                      backgroundColor: '#0284c7',
+                      color: 'white',
+                      border: '2px solid white',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '0.75rem',
+                      cursor: 'pointer',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                    }}
+                  >
+                    📷
+                  </button>
                 </div>
+
+                <div>
+                  <h3 style={{ margin: '0 0 0.25rem', fontSize: '1.1rem', fontWeight: 700 }}>{inspectUser.name}</h3>
+                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                    <Badge variant={roleBadgeVariant[inspectUser.role] || 'info'}>
+                      {roleLabelMap[inspectUser.role] || inspectUser.role}
+                    </Badge>
+                    <Badge variant={statusVariant[inspectUser.status] || 'default'}>{inspectUser.status}</Badge>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  type="button"
+                  onClick={() => accountFileInputRef.current?.click()}
+                >
+                  📁 Upload Photo
+                </Button>
+                {inspectUser.avatar && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    type="button"
+                    style={{ color: '#dc2626' }}
+                    onClick={() => handleRemoveAccountAvatar(inspectUser)}
+                  >
+                    🗑️ Remove
+                  </Button>
+                )}
               </div>
             </div>
 
