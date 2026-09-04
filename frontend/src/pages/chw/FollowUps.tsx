@@ -6,6 +6,8 @@ import { Modal } from '../../components/ui/Modal';
 import { useAuth } from '../../App';
 import { API_BASE } from '../../config';
 import { offlineSyncService } from '../../services/offlineSync';
+import { VoiceDictationButton } from '../../components/VoiceDictationButton';
+import { MultilingualAudioPlayer } from '../../components/MultilingualAudioPlayer';
 
 const statusLabel: Record<string, string> = {
   DUE_TODAY: 'Due today',
@@ -36,6 +38,7 @@ export const FollowUpsPage = () => {
   const [rescheduleItem, setRescheduleItem] = useState<any | null>(null);
   const [newDays, setNewDays] = useState(3);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [audioPatientItem, setAudioPatientItem] = useState<any | null>(null);
   const [newFollowUp, setNewFollowUp] = useState({
     patientId: '',
     reason: '',
@@ -243,12 +246,20 @@ export const FollowUpsPage = () => {
                   <p style={{ fontSize: '0.75rem', color: 'var(--color-text-light)' }}>Due: <strong>{f.dueDate}</strong></p>
                 </div>
                 {f.status !== 'COMPLETED' ? (
-                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    <Button size="sm" variant="outline" onClick={() => setAudioPatientItem({ ...f, patientName })} style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                      <span>🔊</span> Audio Guidance
+                    </Button>
                     <Button size="sm" variant="outline" onClick={() => { setRescheduleItem(f); setNewDays(3); }}>Reschedule</Button>
                     <Button size="sm" variant="primary" onClick={() => handleMarkComplete(f.id)}>Mark complete</Button>
                   </div>
                 ) : (
-                  <span style={{ color: '#16a34a', fontWeight: 600, fontSize: '0.85rem' }}>✓ Completed</span>
+                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                    <Button size="sm" variant="outline" onClick={() => setAudioPatientItem({ ...f, patientName })} style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                      <span>🔊</span> Instructions
+                    </Button>
+                    <span style={{ color: '#16a34a', fontWeight: 600, fontSize: '0.85rem' }}>✓ Completed</span>
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -309,6 +320,25 @@ export const FollowUpsPage = () => {
           </div>
 
           <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+              <label style={{ fontSize: '0.8rem', fontWeight: 500, color: '#374151' }}>Reason for visit</label>
+              <VoiceDictationButton
+                currentValue={newFollowUp.reason}
+                onTranscript={text => setNewFollowUp(prev => ({ ...prev, reason: text }))}
+                size="sm"
+                label="Voice Dictate"
+              />
+            </div>
+            <input
+              type="text"
+              value={newFollowUp.reason}
+              onChange={e => setNewFollowUp({ ...newFollowUp, reason: e.target.value })}
+              placeholder="e.g. 48-hour fever recovery & medication adherence check"
+              style={{ width: '100%', height: '38px', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '0 0.6rem', fontSize: '0.85rem' }}
+            />
+          </div>
+
+          <div>
             <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 500, color: '#374151', marginBottom: '0.25rem' }}>Schedule for</label>
             <select
               value={newFollowUp.days}
@@ -323,6 +353,35 @@ export const FollowUpsPage = () => {
             </select>
           </div>
         </form>
+      </Modal>
+
+      {/* Multilingual Audio Guidance Modal */}
+      <Modal
+        isOpen={!!audioPatientItem}
+        onClose={() => setAudioPatientItem(null)}
+        title={
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <span>🔊</span>
+            <span>Caregiver Spoken Instructions — {audioPatientItem?.patientName}</span>
+          </div>
+        }
+        footer={
+          <Button variant="primary" onClick={() => setAudioPatientItem(null)}>
+            Done
+          </Button>
+        }
+      >
+        {audioPatientItem && (
+          <MultilingualAudioPlayer
+            patientName={audioPatientItem.patientName}
+            initialProtocolKey={
+              audioPatientItem.reason?.toLowerCase().includes('antenatal') || audioPatientItem.reason?.toLowerCase().includes('pregnant') ? 'MATERNAL_ANC' :
+              audioPatientItem.reason?.toLowerCase().includes('diabetes') || audioPatientItem.reason?.toLowerCase().includes('pressure') ? 'CHRONIC_HYPERTENSION' :
+              audioPatientItem.reason?.toLowerCase().includes('malaria') ? 'MALARIA_FEVER' :
+              'CHILD_PNEUMONIA'
+            }
+          />
+        )}
       </Modal>
     </div>
   );

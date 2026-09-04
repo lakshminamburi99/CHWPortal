@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { API_BASE } from '../config';
 import { Avatar } from './ui/Avatar';
 import { getAvatarForPatient } from '../utils/avatars';
+import { VoiceDictationButton } from './VoiceDictationButton';
+import { SpeechSynthesisService } from '../services/speechService';
 
 export interface PatientContextItem {
   id: string;
@@ -826,26 +828,55 @@ Generated via Care Compass CWSTbot · Multi-Agent Clinical Swarm
                         border: '1px solid #bbf7d0',
                       }}
                     >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px', flexWrap: 'wrap', gap: '4px' }}>
                         <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#166534' }}>
                           ✨ Verified Clinical Action Plan
                         </div>
-                        <button
-                          onClick={handleCopySoapNote}
-                          style={{
-                            fontSize: '0.72rem',
-                            fontWeight: 600,
-                            backgroundColor: soapCopied ? '#166534' : 'white',
-                            color: soapCopied ? 'white' : '#166534',
-                            border: '1px solid #166534',
-                            borderRadius: '4px',
-                            padding: '2px 8px',
-                            cursor: 'pointer',
-                            transition: 'all 0.15s ease',
-                          }}
-                        >
-                          {soapCopied ? '✓ SOAP Copied!' : '📋 Copy SOAP Note'}
-                        </button>
+                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (SpeechSynthesisService.isSpeaking()) {
+                                SpeechSynthesisService.stop();
+                              } else if (response?.synthesis) {
+                                SpeechSynthesisService.speak(response.synthesis, { lang: i18n.language });
+                              }
+                            }}
+                            title="Listen to synthesized clinical guidance"
+                            style={{
+                              fontSize: '0.72rem',
+                              fontWeight: 600,
+                              backgroundColor: '#eff6ff',
+                              color: '#1d4ed8',
+                              border: '1px solid #bfdbfe',
+                              borderRadius: '4px',
+                              padding: '2px 8px',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                            }}
+                          >
+                            <span>🔊</span> Listen
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleCopySoapNote}
+                            style={{
+                              fontSize: '0.72rem',
+                              fontWeight: 600,
+                              backgroundColor: soapCopied ? '#166534' : 'white',
+                              color: soapCopied ? 'white' : '#166534',
+                              border: '1px solid #166534',
+                              borderRadius: '4px',
+                              padding: '2px 8px',
+                              cursor: 'pointer',
+                              transition: 'all 0.15s ease',
+                            }}
+                          >
+                            {soapCopied ? '✓ SOAP Copied!' : '📋 Copy SOAP Note'}
+                          </button>
+                        </div>
                       </div>
                       <div style={{ fontSize: '0.8rem', color: '#14532d', whiteSpace: 'pre-line', lineHeight: 1.5 }}>
                         {response.synthesis}
@@ -1060,22 +1091,12 @@ Generated via Care Compass CWSTbot · Multi-Agent Clinical Swarm
                   color: 'var(--foreground)',
                 }}
               />
-              <button
-                type="button"
-                onClick={isRecording ? stopVoiceRecording : startVoiceRecording}
-                style={{
-                  backgroundColor: isRecording ? '#ef4444' : 'var(--primary)',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  padding: '0 12px',
-                  cursor: 'pointer',
-                  fontSize: '0.9rem',
-                }}
-                title="Voice Input (Speech-to-Text V2)"
-              >
-                {isRecording ? '⏹️' : '🎙️'}
-              </button>
+              <VoiceDictationButton
+                currentValue={query}
+                onTranscript={text => setQuery(text)}
+                size="sm"
+                variant="icon"
+              />
               <button
                 type="submit"
                 disabled={loading}
