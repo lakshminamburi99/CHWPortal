@@ -6,6 +6,7 @@ import { Button } from '../../../components/ui/Button';
 import { Modal } from '../../../components/ui/Modal';
 import { Avatar } from '../../../components/ui/Avatar';
 import { getAvatarForUser } from '../../../utils/avatars';
+import { GeospatialOutbreakMap } from '../../../components/GeospatialOutbreakMap';
 import { API_BASE } from '../../../config';
 
 const statusVariant: Record<string, 'success' | 'warning' | 'danger'> = {
@@ -229,6 +230,11 @@ export const SuperAdminDashboard = () => {
             </CardContent>
           </Card>
         ))}
+      </div>
+
+      {/* ── Section: Real-Time Sentinel Geospatial Outbreak & Surveillance GIS ── */}
+      <div style={{ marginBottom: '2rem' }}>
+        <GeospatialOutbreakMap />
       </div>
 
       {/* ── Section: System Services & Microservices Health ── */}

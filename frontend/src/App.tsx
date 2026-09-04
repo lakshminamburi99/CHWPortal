@@ -6,6 +6,8 @@ import { CWSTbot } from './components/CWSTbot';
 import { CareCompassLogo } from './components/CareCompassLogo';
 import { Avatar } from './components/ui/Avatar';
 import { getAvatarForUser } from './utils/avatars';
+import { offlineSyncService, type SyncState } from './services/offlineSync';
+import { OfflineSyncModal } from './components/OfflineSyncModal';
 
 // ---------------------------------------------------------
 // Types
@@ -447,6 +449,48 @@ const Sidebar = () => {
     </aside>
   );
 };
+// ---------------------------------------------------------
+// Lazy-imported pages for high-performance code splitting
+// ---------------------------------------------------------
+const SignIn = React.lazy(() => import('./pages/auth/SignIn').then(m => ({ default: m.SignIn })));
+const ChwDashboard = React.lazy(() => import('./pages/chw/Dashboard').then(m => ({ default: m.ChwDashboard })));
+const PatientsPage = React.lazy(() => import('./pages/chw/Patients').then(m => ({ default: m.PatientsPage })));
+const AssessmentsPage = React.lazy(() => import('./pages/chw/Assessments').then(m => ({ default: m.AssessmentsPage })));
+const CasesPage = React.lazy(() => import('./pages/chw/Cases').then(m => ({ default: m.CasesPage })));
+const ReferralsPage = React.lazy(() => import('./pages/chw/Referrals').then(m => ({ default: m.ReferralsPage })));
+const FollowUpsPage = React.lazy(() => import('./pages/chw/FollowUps').then(m => ({ default: m.FollowUpsPage })));
+const NotificationsPage = React.lazy(() => import('./pages/chw/Notifications').then(m => ({ default: m.NotificationsPage })));
+const TrainingPage = React.lazy(() => import('./pages/chw/Training').then(m => ({ default: m.TrainingPage })));
+const ProfilePage = React.lazy(() => import('./pages/shared/Profile').then(m => ({ default: m.ProfilePage })));
+const SupervisorDashboard = React.lazy(() => import('./pages/supervisor/Dashboard').then(m => ({ default: m.SupervisorDashboard })));
+const TriagePage = React.lazy(() => import('./pages/supervisor/Triage').then(m => ({ default: m.TriagePage })));
+const SupervisorCasesPage = React.lazy(() => import('./pages/supervisor/Cases').then(m => ({ default: m.SupervisorCasesPage })));
+const SupervisorPatientsPage = React.lazy(() => import('./pages/supervisor/Patients').then(m => ({ default: m.SupervisorPatientsPage })));
+const SupervisorTeamPage = React.lazy(() => import('./pages/supervisor/Team').then(m => ({ default: m.SupervisorTeamPage })));
+const SupervisorReferralsPage = React.lazy(() => import('./pages/supervisor/Referrals').then(m => ({ default: m.SupervisorReferralsPage })));
+const SupervisorFollowUpsPage = React.lazy(() => import('./pages/supervisor/FollowUps').then(m => ({ default: m.SupervisorFollowUpsPage })));
+const ManagerDashboard = React.lazy(() => import('./pages/manager/Dashboard').then(m => ({ default: m.ManagerDashboard })));
+const RegionsPage = React.lazy(() => import('./pages/manager/Regions').then(m => ({ default: m.RegionsPage })));
+const DistrictsPage = React.lazy(() => import('./pages/manager/Districts').then(m => ({ default: m.DistrictsPage })));
+const TeamsPage = React.lazy(() => import('./pages/manager/Teams').then(m => ({ default: m.TeamsPage })));
+const ReportsPage = React.lazy(() => import('./pages/manager/Reports').then(m => ({ default: m.ReportsPage })));
+const RegionalAdminDashboard = React.lazy(() => import('./pages/admin/regional/Dashboard').then(m => ({ default: m.RegionalAdminDashboard })));
+const AccountsPage = React.lazy(() => import('./pages/admin/regional/Accounts').then(m => ({ default: m.AccountsPage })));
+const OrgUnitsPage = React.lazy(() => import('./pages/admin/regional/OrgUnits').then(m => ({ default: m.OrgUnitsPage })));
+const OrgUnitDetailsPage = React.lazy(() => import('./pages/admin/regional/OrgUnitDetails').then(m => ({ default: m.OrgUnitDetailsPage })));
+const SuperAdminDashboard = React.lazy(() => import('./pages/admin/super/Dashboard').then(m => ({ default: m.SuperAdminDashboard })));
+const UsersPage = React.lazy(() => import('./pages/admin/super/Users').then(m => ({ default: m.UsersPage })));
+const RolesPage = React.lazy(() => import('./pages/admin/super/Roles').then(m => ({ default: m.RolesPage })));
+const AuditPage = React.lazy(() => import('./pages/admin/super/Audit').then(m => ({ default: m.AuditPage })));
+const SettingsPage = React.lazy(() => import('./pages/admin/super/Settings').then(m => ({ default: m.SettingsPage })));
+
+const PageLoader = () => (
+  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', padding: '1rem', width: '100%', opacity: 0.7 }}>
+    <div style={{ height: '32px', width: '220px', backgroundColor: 'var(--muted)', borderRadius: '8px' }} />
+    <div style={{ height: '120px', width: '100%', backgroundColor: 'var(--muted)', borderRadius: '12px' }} />
+    <div style={{ height: '240px', width: '100%', backgroundColor: 'var(--muted)', borderRadius: '12px' }} />
+  </div>
+);
 
 // ---------------------------------------------------------
 // Top Header
@@ -455,57 +499,100 @@ const Header = () => {
   const { user } = useAuth();
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const [syncState, setSyncState] = useState<SyncState>(offlineSyncService.getState());
+  const [showSyncModal, setShowSyncModal] = useState(false);
+
+  useEffect(() => {
+    const unsub = offlineSyncService.subscribe(state => {
+      setSyncState(state);
+    });
+    return unsub;
+  }, []);
+
   if (!user) return null;
   const userAvatar = user.avatar || getAvatarForUser(user);
+  const isEffectiveOnline = syncState.isOnline && !syncState.isSimulatedOffline;
 
   return (
-    <header style={{
-      height: 'var(--header-height)',
-      backgroundColor: 'var(--card)',
-      borderBottom: '1px solid var(--border)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      padding: '0 1.5rem',
-      flexShrink: 0,
-      fontFamily: 'var(--font-sans)',
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-        <span style={{ fontSize: '0.8125rem', color: 'var(--muted-foreground)', fontWeight: 500 }}>
-          {t(`roles.${user.role}`)}
-        </span>
-        <span style={{
-          fontSize: '0.7rem',
-          padding: '0.2rem 0.55rem',
-          border: '1px solid #16a34a',
-          borderRadius: '9999px',
-          color: '#16a34a',
-          backgroundColor: '#f0fdf4',
-          fontWeight: 600,
-          letterSpacing: '0.02em',
-        }}>
-          {t('common.online')}
-        </span>
-      </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
-        <LanguageSelector variant="dropdown" />
-        <div
-          onClick={() => navigate(getProfilePath(user.role))}
-          title="Account Settings"
-          style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}
-        >
-          <Avatar
-            src={userAvatar}
-            name={user.name}
-            role={user.role}
-            size="sm"
-            status="online"
-            border={true}
-            borderColor="var(--primary)"
-          />
+    <>
+      <header style={{
+        height: 'var(--header-height)',
+        backgroundColor: 'var(--card)',
+        borderBottom: '1px solid var(--border)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '0 1.5rem',
+        flexShrink: 0,
+        fontFamily: 'var(--font-sans)',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <span style={{ fontSize: '0.8125rem', color: 'var(--muted-foreground)', fontWeight: 500 }}>
+            {t(`roles.${user.role}`)}
+          </span>
+          <button
+            onClick={() => setShowSyncModal(true)}
+            title="Click to view Offline Outbox & Sync Status"
+            style={{
+              fontSize: '0.7rem',
+              padding: '0.2rem 0.65rem',
+              border: `1px solid ${
+                syncState.isSimulatedOffline ? '#f59e0b' :
+                isEffectiveOnline ? (syncState.pendingCount > 0 ? '#3b82f6' : '#16a34a') : '#ef4444'
+              }`,
+              borderRadius: '9999px',
+              color: syncState.isSimulatedOffline ? '#b45309' :
+                isEffectiveOnline ? (syncState.pendingCount > 0 ? '#1d4ed8' : '#16a34a') : '#ef4444',
+              backgroundColor: syncState.isSimulatedOffline ? '#fef3c7' :
+                isEffectiveOnline ? (syncState.pendingCount > 0 ? '#eff6ff' : '#f0fdf4') : '#fef2f2',
+              fontWeight: 600,
+              letterSpacing: '0.02em',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '5px',
+              cursor: 'pointer',
+              transition: 'transform 0.15s ease',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.03)')}
+            onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
+          >
+            <span style={{
+              width: '6px',
+              height: '6px',
+              borderRadius: '50%',
+              backgroundColor: syncState.isSimulatedOffline ? '#f59e0b' :
+                isEffectiveOnline ? (syncState.pendingCount > 0 ? '#3b82f6' : '#16a34a') : '#ef4444'
+            }} />
+            {syncState.isSimulatedOffline
+              ? `🟡 Sim Offline ${syncState.pendingCount > 0 ? `(${syncState.pendingCount} queued)` : ''}`
+              : isEffectiveOnline
+              ? (syncState.pendingCount > 0
+                  ? `🔄 Syncing ${syncState.pendingCount} record(s)...`
+                  : `${t('common.online')} · Live Sync`)
+              : `🔴 Offline (${syncState.pendingCount} in Outbox)`}
+          </button>
         </div>
-      </div>
-    </header>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+          <LanguageSelector variant="dropdown" />
+          <div
+            onClick={() => navigate(getProfilePath(user.role))}
+            title="Account Settings"
+            style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+          >
+            <Avatar
+              src={userAvatar}
+              name={user.name}
+              role={user.role}
+              size="sm"
+              status={isEffectiveOnline ? "online" : "offline"}
+              border={true}
+              borderColor="var(--primary)"
+            />
+          </div>
+        </div>
+      </header>
+      <OfflineSyncModal isOpen={showSyncModal} onClose={() => setShowSyncModal(false)} />
+    </>
   );
 };
 
@@ -518,47 +605,14 @@ const DashboardLayout = () => (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       <Header />
       <main style={{ flex: 1, overflowY: 'auto', padding: '1.75rem 2rem', backgroundColor: 'var(--background)' }}>
-        <Outlet />
+        <React.Suspense fallback={<PageLoader />}>
+          <Outlet />
+        </React.Suspense>
       </main>
     </div>
     <CWSTbot />
   </div>
 );
-
-// ---------------------------------------------------------
-// Lazy-imported pages
-// ---------------------------------------------------------
-import { SignIn } from './pages/auth/SignIn';
-import { ChwDashboard } from './pages/chw/Dashboard';
-import { PatientsPage } from './pages/chw/Patients';
-import { AssessmentsPage } from './pages/chw/Assessments';
-import { CasesPage } from './pages/chw/Cases';
-import { ReferralsPage } from './pages/chw/Referrals';
-import { FollowUpsPage } from './pages/chw/FollowUps';
-import { NotificationsPage } from './pages/chw/Notifications';
-import { TrainingPage } from './pages/chw/Training';
-import { ProfilePage } from './pages/shared/Profile';
-import { SupervisorDashboard } from './pages/supervisor/Dashboard';
-import { TriagePage } from './pages/supervisor/Triage';
-import { SupervisorCasesPage } from './pages/supervisor/Cases';
-import { SupervisorPatientsPage } from './pages/supervisor/Patients';
-import { SupervisorTeamPage } from './pages/supervisor/Team';
-import { SupervisorReferralsPage } from './pages/supervisor/Referrals';
-import { SupervisorFollowUpsPage } from './pages/supervisor/FollowUps';
-import { ManagerDashboard } from './pages/manager/Dashboard';
-import { RegionsPage } from './pages/manager/Regions';
-import { DistrictsPage } from './pages/manager/Districts';
-import { TeamsPage } from './pages/manager/Teams';
-import { ReportsPage } from './pages/manager/Reports';
-import { RegionalAdminDashboard } from './pages/admin/regional/Dashboard';
-import { AccountsPage } from './pages/admin/regional/Accounts';
-import { OrgUnitsPage } from './pages/admin/regional/OrgUnits';
-import { OrgUnitDetailsPage } from './pages/admin/regional/OrgUnitDetails';
-import { SuperAdminDashboard } from './pages/admin/super/Dashboard';
-import { UsersPage } from './pages/admin/super/Users';
-import { RolesPage } from './pages/admin/super/Roles';
-import { AuditPage } from './pages/admin/super/Audit';
-import { SettingsPage } from './pages/admin/super/Settings';
 
 const Unauthorized = () => (
   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: '1rem' }}>
@@ -581,73 +635,75 @@ function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<SignIn />} />
-          <Route path="/redirect" element={<RoleRedirect />} />
-          <Route path="/unauthorized" element={<Unauthorized />} />
+        <React.Suspense fallback={<PageLoader />}>
+          <Routes>
+            <Route path="/" element={<SignIn />} />
+            <Route path="/redirect" element={<RoleRedirect />} />
+            <Route path="/unauthorized" element={<Unauthorized />} />
 
-          <Route element={<DashboardLayout />}>
-            {/* CHW */}
-            <Route element={<ProtectedRoute allowedRoles={['CHW']} />}>
-              <Route path="/chw/dashboard" element={<ChwDashboard />} />
-              <Route path="/chw/patients" element={<PatientsPage />} />
-              <Route path="/chw/assessments" element={<AssessmentsPage />} />
-              <Route path="/chw/cases" element={<CasesPage />} />
-              <Route path="/chw/referrals" element={<ReferralsPage />} />
-              <Route path="/chw/follow-ups" element={<FollowUpsPage />} />
-              <Route path="/chw/notifications" element={<NotificationsPage />} />
-              <Route path="/chw/training" element={<TrainingPage />} />
-              <Route path="/chw/profile" element={<ProfilePage />} />
-            </Route>
+            <Route element={<DashboardLayout />}>
+              {/* CHW */}
+              <Route element={<ProtectedRoute allowedRoles={['CHW']} />}>
+                <Route path="/chw/dashboard" element={<ChwDashboard />} />
+                <Route path="/chw/patients" element={<PatientsPage />} />
+                <Route path="/chw/assessments" element={<AssessmentsPage />} />
+                <Route path="/chw/cases" element={<CasesPage />} />
+                <Route path="/chw/referrals" element={<ReferralsPage />} />
+                <Route path="/chw/follow-ups" element={<FollowUpsPage />} />
+                <Route path="/chw/notifications" element={<NotificationsPage />} />
+                <Route path="/chw/training" element={<TrainingPage />} />
+                <Route path="/chw/profile" element={<ProfilePage />} />
+              </Route>
 
-            {/* Supervisor */}
-            <Route element={<ProtectedRoute allowedRoles={['SUPERVISOR']} />}>
-              <Route path="/supervisor/dashboard" element={<SupervisorDashboard />} />
-              <Route path="/supervisor/triage" element={<TriagePage />} />
-              <Route path="/supervisor/cases" element={<SupervisorCasesPage />} />
-              <Route path="/supervisor/patients" element={<SupervisorPatientsPage />} />
-              <Route path="/supervisor/team" element={<SupervisorTeamPage />} />
-              <Route path="/supervisor/referrals" element={<SupervisorReferralsPage />} />
-              <Route path="/supervisor/follow-ups" element={<SupervisorFollowUpsPage />} />
-              <Route path="/supervisor/notifications" element={<NotificationsPage />} />
-              <Route path="/supervisor/profile" element={<ProfilePage />} />
-            </Route>
+              {/* Supervisor */}
+              <Route element={<ProtectedRoute allowedRoles={['SUPERVISOR']} />}>
+                <Route path="/supervisor/dashboard" element={<SupervisorDashboard />} />
+                <Route path="/supervisor/triage" element={<TriagePage />} />
+                <Route path="/supervisor/cases" element={<SupervisorCasesPage />} />
+                <Route path="/supervisor/patients" element={<SupervisorPatientsPage />} />
+                <Route path="/supervisor/team" element={<SupervisorTeamPage />} />
+                <Route path="/supervisor/referrals" element={<SupervisorReferralsPage />} />
+                <Route path="/supervisor/follow-ups" element={<SupervisorFollowUpsPage />} />
+                <Route path="/supervisor/notifications" element={<NotificationsPage />} />
+                <Route path="/supervisor/profile" element={<ProfilePage />} />
+              </Route>
 
-            {/* Manager */}
-            <Route element={<ProtectedRoute allowedRoles={['MANAGER', 'PROGRAMME_MANAGER']} />}>
-              <Route path="/manager/dashboard" element={<ManagerDashboard />} />
-              <Route path="/manager/regions" element={<RegionsPage />} />
-              <Route path="/manager/districts" element={<DistrictsPage />} />
-              <Route path="/manager/teams" element={<TeamsPage />} />
-              <Route path="/manager/reports" element={<ReportsPage />} />
-              <Route path="/manager/notifications" element={<NotificationsPage />} />
-              <Route path="/manager/profile" element={<ProfilePage />} />
-            </Route>
+              {/* Manager */}
+              <Route element={<ProtectedRoute allowedRoles={['MANAGER', 'PROGRAMME_MANAGER']} />}>
+                <Route path="/manager/dashboard" element={<ManagerDashboard />} />
+                <Route path="/manager/regions" element={<RegionsPage />} />
+                <Route path="/manager/districts" element={<DistrictsPage />} />
+                <Route path="/manager/teams" element={<TeamsPage />} />
+                <Route path="/manager/reports" element={<ReportsPage />} />
+                <Route path="/manager/notifications" element={<NotificationsPage />} />
+                <Route path="/manager/profile" element={<ProfilePage />} />
+              </Route>
 
-            {/* Regional Admin */}
-            <Route element={<ProtectedRoute allowedRoles={['REGIONAL_ADMIN']} />}>
-              <Route path="/admin/regional/dashboard" element={<RegionalAdminDashboard />} />
-              <Route path="/admin/regional/accounts" element={<AccountsPage />} />
-              <Route path="/admin/regional/org-units" element={<OrgUnitsPage />} />
-              <Route path="/admin/regional/org-units/:id" element={<OrgUnitDetailsPage />} />
-              <Route path="/admin/regional/notifications" element={<NotificationsPage />} />
-              <Route path="/admin/regional/profile" element={<ProfilePage />} />
-            </Route>
+              {/* Regional Admin */}
+              <Route element={<ProtectedRoute allowedRoles={['REGIONAL_ADMIN']} />}>
+                <Route path="/admin/regional/dashboard" element={<RegionalAdminDashboard />} />
+                <Route path="/admin/regional/accounts" element={<AccountsPage />} />
+                <Route path="/admin/regional/org-units" element={<OrgUnitsPage />} />
+                <Route path="/admin/regional/org-units/:id" element={<OrgUnitDetailsPage />} />
+                <Route path="/admin/regional/notifications" element={<NotificationsPage />} />
+                <Route path="/admin/regional/profile" element={<ProfilePage />} />
+              </Route>
 
-            {/* Super Admin */}
-            <Route element={<ProtectedRoute allowedRoles={['SUPER_ADMIN']} />}>
-              <Route path="/admin/super/dashboard" element={<SuperAdminDashboard />} />
-              <Route path="/admin/super/users" element={<UsersPage />} />
-              <Route path="/admin/super/roles" element={<RolesPage />} />
-              <Route path="/admin/super/audit" element={<AuditPage />} />
-              <Route path="/admin/super/settings" element={<SettingsPage />} />
-              <Route path="/admin/super/org-units" element={<OrgUnitsPage />} />
-              <Route path="/admin/super/org-units/:id" element={<OrgUnitDetailsPage />} />
-              <Route path="/admin/super/notifications" element={<NotificationsPage />} />
-              <Route path="/admin/super/profile" element={<ProfilePage />} />
+              {/* Super Admin */}
+              <Route element={<ProtectedRoute allowedRoles={['SUPER_ADMIN']} />}>
+                <Route path="/admin/super/dashboard" element={<SuperAdminDashboard />} />
+                <Route path="/admin/super/users" element={<UsersPage />} />
+                <Route path="/admin/super/roles" element={<RolesPage />} />
+                <Route path="/admin/super/audit" element={<AuditPage />} />
+                <Route path="/admin/super/settings" element={<SettingsPage />} />
+                <Route path="/admin/super/org-units" element={<OrgUnitsPage />} />
+                <Route path="/admin/super/org-units/:id" element={<OrgUnitDetailsPage />} />
+                <Route path="/admin/super/notifications" element={<NotificationsPage />} />
+                <Route path="/admin/super/profile" element={<ProfilePage />} />
+              </Route>
             </Route>
-          </Route>
-        </Routes>
+          </Routes>
+        </React.Suspense>
       </BrowserRouter>
     </AuthProvider>
   );

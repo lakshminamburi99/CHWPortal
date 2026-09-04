@@ -4,8 +4,8 @@ import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
 import { useAuth } from '../../App';
-
 import { API_BASE } from '../../config';
+import { offlineSyncService } from '../../services/offlineSync';
 
 const statusLabel: Record<string, string> = {
   DUE_TODAY: 'Due today',
@@ -80,6 +80,20 @@ export const FollowUpsPage = () => {
   }, []);
 
   const handleMarkComplete = async (id: string) => {
+    if (!offlineSyncService.effectiveOnlineStatus()) {
+      offlineSyncService.enqueue(
+        'SCHEDULE_FOLLOW_UP',
+        `/follow-ups/${id}/complete`,
+        'POST',
+        {},
+        `Complete Follow-up (${id})`
+      );
+      setFollowUps(prev => prev.map(f => f.id === id ? { ...f, status: 'COMPLETED' } : f));
+      setActionSuccess('Follow-up visit marked complete (Queued to Offline Outbox).');
+      setTimeout(() => setActionSuccess(''), 4000);
+      return;
+    }
+
     try {
       const token = localStorage.getItem('access_token');
       const res = await fetch(`${API_BASE}/follow-ups/${id}/complete`, {
@@ -92,8 +106,15 @@ export const FollowUpsPage = () => {
         fetchFollowUpsAndPatients();
       }
     } catch {
+      offlineSyncService.enqueue(
+        'SCHEDULE_FOLLOW_UP',
+        `/follow-ups/${id}/complete`,
+        'POST',
+        {},
+        `Complete Follow-up (${id})`
+      );
       setFollowUps(prev => prev.map(f => f.id === id ? { ...f, status: 'COMPLETED' } : f));
-      setActionSuccess('Follow-up visit marked as completed.');
+      setActionSuccess('Follow-up visit marked complete (Queued to Offline Outbox).');
       setTimeout(() => setActionSuccess(''), 4000);
     }
   };
@@ -132,6 +153,23 @@ export const FollowUpsPage = () => {
   const handleScheduleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const targetPatientId = newFollowUp.patientId || (patients.length > 0 ? patients[0].id : 'PT-2026-0002');
+    const pName = patientsMap[targetPatientId] || 'Patient';
+
+    if (!offlineSyncService.effectiveOnlineStatus()) {
+      offlineSyncService.enqueue(
+        'SCHEDULE_FOLLOW_UP',
+        `/patients/${targetPatientId}/schedule-follow-up`,
+        'POST',
+        { days: Number(newFollowUp.days) },
+        `Schedule Follow-up (+${newFollowUp.days}d)`,
+        pName
+      );
+      setActionSuccess('Follow-up scheduled (Queued to Offline Outbox).');
+      setTimeout(() => setActionSuccess(''), 4000);
+      setShowScheduleModal(false);
+      setNewFollowUp({ patientId: '', reason: '', days: 3 });
+      return;
+    }
 
     try {
       const token = localStorage.getItem('access_token');
@@ -152,7 +190,15 @@ export const FollowUpsPage = () => {
         fetchFollowUpsAndPatients();
       }
     } catch {
-      setActionSuccess('Follow-up scheduled.');
+      offlineSyncService.enqueue(
+        'SCHEDULE_FOLLOW_UP',
+        `/patients/${targetPatientId}/schedule-follow-up`,
+        'POST',
+        { days: Number(newFollowUp.days) },
+        `Schedule Follow-up (+${newFollowUp.days}d)`,
+        pName
+      );
+      setActionSuccess('Follow-up scheduled (Queued to Offline Outbox).');
       setTimeout(() => setActionSuccess(''), 4000);
     } finally {
       setShowScheduleModal(false);

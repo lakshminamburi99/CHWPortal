@@ -3,6 +3,7 @@ import { Card, CardContent } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
+import { ClinicalSimulationDrills } from '../../components/ClinicalSimulationDrills';
 import { API_BASE } from '../../config';
 
 // ---------------------------------------------------------
@@ -891,190 +892,240 @@ export const TrainingPage: React.FC = () => {
     ? Math.round(lessons.reduce((acc, l) => acc + (l.progress || 0), 0) / lessons.length)
     : 0;
 
+  const [activeMainTab, setActiveMainTab] = useState<'modules' | 'simulations'>('modules');
+
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
       {/* Page Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
           <h1 style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--foreground)', marginBottom: '0.25rem' }}>
             Clinical Training & Learning Pathways
           </h1>
           <p style={{ color: 'var(--muted-foreground)', fontSize: '0.875rem' }}>
-            Continuous medical education, accredited triage protocols, and real-time clinical knowledge checks
+            Continuous medical education, accredited triage protocols, and real-time clinical simulation drills
           </p>
         </div>
       </div>
 
-      {toast && (
-        <div style={{
-          padding: '0.75rem 1.25rem',
-          backgroundColor: '#dcfce7',
-          color: '#15803d',
-          borderRadius: 'var(--radius)',
-          border: '1px solid #86efac',
-          marginBottom: '1.5rem',
-          fontSize: '0.875rem',
-          fontWeight: 600,
-          boxShadow: 'var(--shadow-sm)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.5rem',
-        }}>
-          {toast}
-        </div>
-      )}
-
-      {/* KPI Overview */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
-        {[
-          { label: 'TOTAL MODULES', value: lessons.length.toString(), sub: 'In clinical curriculum' },
-          { label: 'IN PROGRESS', value: inProgressCount.toString(), sub: 'Active learning modules' },
-          { label: 'COMPLETED', value: completedCount.toString(), sub: 'Accredited certificates' },
-          { label: 'OVERALL PROGRESS', value: `${avgProgress}%`, sub: 'Curriculum mastery' },
-        ].map(kpi => (
-          <Card key={kpi.label}>
-            <CardContent style={{ padding: '1.25rem' }}>
-              <p style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--muted-foreground)', marginBottom: '0.25rem' }}>
-                {kpi.label}
-              </p>
-              <p style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--foreground)' }}>{kpi.value}</p>
-              <p style={{ fontSize: '0.75rem', color: 'var(--muted-foreground)' }}>{kpi.sub}</p>
-            </CardContent>
-          </Card>
-        ))}
+      {/* Main Tab Switcher: Core Modules vs Interactive Simulation Drills */}
+      <div style={{ display: 'flex', gap: '0.65rem', marginBottom: '1.75rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.75rem', flexWrap: 'wrap' }}>
+        <button
+          onClick={() => setActiveMainTab('modules')}
+          style={{
+            padding: '0.55rem 1.15rem',
+            borderRadius: '8px',
+            fontSize: '0.875rem',
+            fontWeight: 700,
+            border: activeMainTab === 'modules' ? '1px solid var(--primary)' : '1px solid var(--border)',
+            backgroundColor: activeMainTab === 'modules' ? 'var(--primary)' : 'var(--card)',
+            color: activeMainTab === 'modules' ? 'var(--primary-foreground)' : 'var(--muted-foreground)',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.45rem',
+            transition: 'all 0.15s ease',
+          }}
+        >
+          <span>📚</span> Core Modules & Curriculum ({lessons.length})
+        </button>
+        <button
+          onClick={() => setActiveMainTab('simulations')}
+          style={{
+            padding: '0.55rem 1.15rem',
+            borderRadius: '8px',
+            fontSize: '0.875rem',
+            fontWeight: 700,
+            border: activeMainTab === 'simulations' ? '1px solid #4f46e5' : '1px solid var(--border)',
+            backgroundColor: activeMainTab === 'simulations' ? '#4f46e5' : 'var(--card)',
+            color: activeMainTab === 'simulations' ? 'white' : 'var(--muted-foreground)',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.45rem',
+            transition: 'all 0.15s ease',
+          }}
+        >
+          <span>🎮</span> Clinical Simulation Drills <Badge variant="warning" style={{ fontSize: '0.65rem' }}>NEW</Badge>
+        </button>
       </div>
 
-      {/* Category Filter Pills */}
-      <div style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '0.5rem', marginBottom: '1.5rem' }}>
-        {categories.map(cat => (
-          <button
-            key={cat}
-            onClick={() => setFilterCategory(cat)}
-            style={{
-              padding: '0.45rem 1rem',
-              borderRadius: '999px',
-              fontSize: '0.8125rem',
+      {activeMainTab === 'simulations' ? (
+        <ClinicalSimulationDrills />
+      ) : (
+        <>
+          {toast && (
+            <div style={{
+              padding: '0.75rem 1.25rem',
+              backgroundColor: '#dcfce7',
+              color: '#15803d',
+              borderRadius: 'var(--radius)',
+              border: '1px solid #86efac',
+              marginBottom: '1.5rem',
+              fontSize: '0.875rem',
               fontWeight: 600,
-              border: filterCategory === cat ? '1px solid var(--primary)' : '1px solid var(--border)',
-              cursor: 'pointer',
-              backgroundColor: filterCategory === cat ? 'var(--primary)' : 'var(--card)',
-              color: filterCategory === cat ? 'var(--primary-foreground)' : 'var(--muted-foreground)',
               boxShadow: 'var(--shadow-sm)',
-              transition: 'all var(--transition-fast)',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {cat}
-          </button>
-        ))}
-      </div>
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+            }}>
+              {toast}
+            </div>
+          )}
 
-      {/* Recommended Section */}
-      {filteredLessons.some(l => l.recommended) && (
-        <div style={{ marginBottom: '2.5rem' }}>
-          <h2 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--foreground)', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            ⭐ Recommended for Your Caseload
+          {/* KPI Overview */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
+            {[
+              { label: 'TOTAL MODULES', value: lessons.length.toString(), sub: 'In clinical curriculum' },
+              { label: 'IN PROGRESS', value: inProgressCount.toString(), sub: 'Active learning modules' },
+              { label: 'COMPLETED', value: completedCount.toString(), sub: 'Accredited certificates' },
+              { label: 'OVERALL PROGRESS', value: `${avgProgress}%`, sub: 'Curriculum mastery' },
+            ].map(kpi => (
+              <Card key={kpi.label}>
+                <CardContent style={{ padding: '1.25rem' }}>
+                  <p style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--muted-foreground)', marginBottom: '0.25rem' }}>
+                    {kpi.label}
+                  </p>
+                  <p style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--foreground)' }}>{kpi.value}</p>
+                  <p style={{ fontSize: '0.75rem', color: 'var(--muted-foreground)' }}>{kpi.sub}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Category Filter Pills */}
+          <div style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '0.5rem', marginBottom: '1.5rem' }}>
+            {categories.map(cat => (
+              <button
+                key={cat}
+                onClick={() => setFilterCategory(cat)}
+                style={{
+                  padding: '0.45rem 1rem',
+                  borderRadius: '999px',
+                  fontSize: '0.8125rem',
+                  fontWeight: 600,
+                  border: filterCategory === cat ? '1px solid var(--primary)' : '1px solid var(--border)',
+                  cursor: 'pointer',
+                  backgroundColor: filterCategory === cat ? 'var(--primary)' : 'var(--card)',
+                  color: filterCategory === cat ? 'var(--primary-foreground)' : 'var(--muted-foreground)',
+                  boxShadow: 'var(--shadow-sm)',
+                  transition: 'all var(--transition-fast)',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+
+          {/* Recommended Section */}
+          {filteredLessons.some(l => l.recommended) && (
+            <div style={{ marginBottom: '2.5rem' }}>
+              <h2 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--foreground)', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                ⭐ Recommended for Your Caseload
+              </h2>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.25rem' }}>
+                {filteredLessons.filter(l => l.recommended).map(l => (
+                  <Card key={l.id} style={{ borderLeft: '4px solid var(--primary)', position: 'relative' }}>
+                    <CardContent style={{ padding: '1.5rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem', alignItems: 'center' }}>
+                        <Badge variant="info">{l.category}</Badge>
+                        <Badge variant="default">{l.difficulty}</Badge>
+                      </div>
+                      <h3 style={{ fontWeight: 700, fontSize: '1.1rem', marginBottom: '0.4rem', color: 'var(--foreground)' }}>
+                        {l.title}
+                      </h3>
+                      {l.recommendationReason && (
+                        <p style={{
+                          fontSize: '0.8rem',
+                          color: '#0369a1',
+                          backgroundColor: '#e0f2fe',
+                          padding: '0.4rem 0.65rem',
+                          borderRadius: 'var(--radius-sm)',
+                          marginBottom: '0.875rem',
+                          fontWeight: 500,
+                        }}>
+                          💡 {l.recommendationReason}
+                        </p>
+                      )}
+                      <div style={{ marginBottom: '1rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--muted-foreground)', marginBottom: '4px' }}>
+                          <span>Progress</span>
+                          <strong style={{ color: l.progress === 100 ? '#16a34a' : 'var(--foreground)' }}>{l.progress || 0}%</strong>
+                        </div>
+                        <div style={{ height: '6px', backgroundColor: 'var(--muted)', borderRadius: '999px', overflow: 'hidden' }}>
+                          <div style={{
+                            width: `${l.progress || 0}%`,
+                            height: '100%',
+                            backgroundColor: l.progress === 100 ? '#16a34a' : 'var(--primary)',
+                            borderRadius: '999px',
+                            transition: 'width 0.3s',
+                          }} />
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--muted-foreground)' }}>
+                          ⏱ {l.durationMinutes} mins · 📑 {l.slides.length} slides with questions
+                        </span>
+                        <Button
+                          size="sm"
+                          variant={l.progress === 100 ? 'outline' : 'primary'}
+                          onClick={() => openLesson(l)}
+                        >
+                          {l.progress === 100 ? 'Review module' : l.progress > 0 ? 'Continue' : 'Start module →'}
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* All Available Modules */}
+          <h2 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--foreground)', marginBottom: '1rem' }}>
+            All Learning Modules ({filteredLessons.length})
           </h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.25rem' }}>
-            {filteredLessons.filter(l => l.recommended).map(l => (
-              <Card key={l.id} style={{ borderLeft: '4px solid var(--primary)', position: 'relative' }}>
-                <CardContent style={{ padding: '1.5rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem', alignItems: 'center' }}>
-                    <Badge variant="info">{l.category}</Badge>
-                    <Badge variant="default">{l.difficulty}</Badge>
-                  </div>
-                  <h3 style={{ fontWeight: 700, fontSize: '1.1rem', marginBottom: '0.4rem', color: 'var(--foreground)' }}>
-                    {l.title}
-                  </h3>
-                  {l.recommendationReason && (
-                    <p style={{
-                      fontSize: '0.8rem',
-                      color: '#0369a1',
-                      backgroundColor: '#e0f2fe',
-                      padding: '0.4rem 0.65rem',
-                      borderRadius: 'var(--radius-sm)',
-                      marginBottom: '0.875rem',
-                      fontWeight: 500,
-                    }}>
-                      💡 {l.recommendationReason}
-                    </p>
-                  )}
-                  <div style={{ marginBottom: '1rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--muted-foreground)', marginBottom: '4px' }}>
-                      <span>Progress</span>
-                      <strong style={{ color: l.progress === 100 ? '#16a34a' : 'var(--foreground)' }}>{l.progress || 0}%</strong>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+            {filteredLessons.map(l => (
+              <Card key={l.id}>
+                <CardContent style={{ padding: '1.25rem 1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+                  <div style={{ flex: 1, minWidth: '260px' }}>
+                    <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.35rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                      <Badge variant="info">{l.category}</Badge>
+                      <Badge variant="default">{l.difficulty}</Badge>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--muted-foreground)' }}>⏱ {l.durationMinutes} min</span>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--muted-foreground)' }}>📑 {l.slides.length} slides & quizzes</span>
                     </div>
-                    <div style={{ height: '6px', backgroundColor: 'var(--muted)', borderRadius: '999px', overflow: 'hidden' }}>
-                      <div style={{
-                        width: `${l.progress || 0}%`,
-                        height: '100%',
-                        backgroundColor: l.progress === 100 ? '#16a34a' : 'var(--primary)',
-                        borderRadius: '999px',
-                        transition: 'width 0.3s',
-                      }} />
-                    </div>
+                    <h3 style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--foreground)' }}>{l.title}</h3>
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--muted-foreground)' }}>
-                      ⏱ {l.durationMinutes} mins · 📑 {l.slides.length} slides with questions
-                    </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+                    <div style={{ textAlign: 'right', minWidth: '80px' }}>
+                      <span style={{ fontSize: '0.85rem', color: l.progress === 100 ? '#16a34a' : 'var(--foreground)', fontWeight: 700 }}>
+                        {l.progress || 0}%
+                      </span>
+                      <div style={{ width: '80px', height: '5px', backgroundColor: 'var(--muted)', borderRadius: '999px', overflow: 'hidden', marginTop: '3px' }}>
+                        <div style={{
+                          width: `${l.progress || 0}%`,
+                          height: '100%',
+                          backgroundColor: l.progress === 100 ? '#16a34a' : 'var(--primary)',
+                        }} />
+                      </div>
+                    </div>
                     <Button
                       size="sm"
                       variant={l.progress === 100 ? 'outline' : 'primary'}
                       onClick={() => openLesson(l)}
                     >
-                      {l.progress === 100 ? 'Review module' : l.progress > 0 ? 'Continue' : 'Start module →'}
+                      {l.progress === 100 ? 'Review' : l.progress > 0 ? 'Continue' : 'Start'}
                     </Button>
                   </div>
                 </CardContent>
               </Card>
             ))}
           </div>
-        </div>
+        </>
       )}
-
-      {/* All Available Modules */}
-      <h2 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--foreground)', marginBottom: '1rem' }}>
-        All Learning Modules ({filteredLessons.length})
-      </h2>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
-        {filteredLessons.map(l => (
-          <Card key={l.id}>
-            <CardContent style={{ padding: '1.25rem 1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-              <div style={{ flex: 1, minWidth: '260px' }}>
-                <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.35rem', flexWrap: 'wrap', alignItems: 'center' }}>
-                  <Badge variant="info">{l.category}</Badge>
-                  <Badge variant="default">{l.difficulty}</Badge>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--muted-foreground)' }}>⏱ {l.durationMinutes} min</span>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--muted-foreground)' }}>📑 {l.slides.length} slides & quizzes</span>
-                </div>
-                <h3 style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--foreground)' }}>{l.title}</h3>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-                <div style={{ textAlign: 'right', minWidth: '80px' }}>
-                  <span style={{ fontSize: '0.85rem', color: l.progress === 100 ? '#16a34a' : 'var(--foreground)', fontWeight: 700 }}>
-                    {l.progress || 0}%
-                  </span>
-                  <div style={{ width: '80px', height: '5px', backgroundColor: 'var(--muted)', borderRadius: '999px', overflow: 'hidden', marginTop: '3px' }}>
-                    <div style={{
-                      width: `${l.progress || 0}%`,
-                      height: '100%',
-                      backgroundColor: l.progress === 100 ? '#16a34a' : 'var(--primary)',
-                    }} />
-                  </div>
-                </div>
-                <Button
-                  size="sm"
-                  variant={l.progress === 100 ? 'outline' : 'primary'}
-                  onClick={() => openLesson(l)}
-                >
-                  {l.progress === 100 ? 'Review' : l.progress > 0 ? 'Continue' : 'Start'}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
 
       {/* ========================================================= */}
       {/* Interactive Lesson Slide Viewer Modal                     */}

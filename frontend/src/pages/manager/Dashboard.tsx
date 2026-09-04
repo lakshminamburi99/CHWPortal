@@ -4,7 +4,7 @@ import { Card, CardContent } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
-
+import { GeospatialOutbreakMap } from '../../components/GeospatialOutbreakMap';
 import { API_BASE } from '../../config';
 
 const initialProgramMetrics = [
@@ -89,6 +89,11 @@ export const ManagerDashboard = () => {
             </CardContent>
           </Card>
         ))}
+      </div>
+
+      {/* ── Real-Time Sentinel Geospatial Outbreak & Surveillance GIS ── */}
+      <div style={{ marginBottom: '2rem' }}>
+        <GeospatialOutbreakMap />
       </div>
 
       {/* Programme targets */}
