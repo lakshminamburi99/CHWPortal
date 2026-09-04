@@ -1,10 +1,11 @@
 import React from 'react';
 
 export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
-  variant?: 'success' | 'warning' | 'danger' | 'info' | 'default' | 'outline';
+  variant?: 'success' | 'warning' | 'danger' | 'info' | 'default' | 'outline' | 'primary';
 }
 
 const variantStyles: Record<string, React.CSSProperties> = {
+  primary: { backgroundColor: '#e0e7ff', color: '#3730a3', border: '1px solid #c7d2fe' },
   success: { backgroundColor: '#dcfce7', color: '#15803d', border: '1px solid #bbf7d0' },
   warning: { backgroundColor: '#fef9c3', color: '#92400e', border: '1px solid #fde68a' },
   danger:  { backgroundColor: '#fee2e2', color: '#b91c1c', border: '1px solid #fecaca' },
