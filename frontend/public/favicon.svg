@@ -1,46 +1,51 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+<svg width="64" height="64" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="bgGrad" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#0f172a" />
-      <stop offset="100%" stop-color="#1e293b" />
+    <linearGradient id="fav-grad-primary" x1="10" y1="10" x2="90" y2="90" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stopColor="#38bdf8" />
+      <stop offset="50%" stopColor="#0284c7" />
+      <stop offset="100%" stopColor="#0f766e" />
     </linearGradient>
-    <linearGradient id="needleNorth" x1="32" y1="10" x2="32" y2="32" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#38bdf8" />
-      <stop offset="100%" stop-color="#0284c7" />
+    <linearGradient id="fav-grad-secondary" x1="90" y1="10" x2="10" y2="90" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stopColor="#34d399" />
+      <stop offset="100%" stopColor="#0284c7" />
     </linearGradient>
-    <linearGradient id="needleSouth" x1="32" y1="32" x2="32" y2="54" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#64748b" />
-      <stop offset="100%" stop-color="#334155" />
+    <linearGradient id="fav-grad-accent" x1="50" y1="0" x2="50" y2="100" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stopColor="#67e8f9" />
+      <stop offset="100%" stopColor="#10b981" />
     </linearGradient>
-    <linearGradient id="ringGrad" x1="8" y1="8" x2="56" y2="56" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.8" />
-      <stop offset="100%" stop-color="#6366f1" stop-opacity="0.8" />
-    </linearGradient>
+    <radialGradient id="fav-bg" cx="50" cy="50" r="50" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stopColor="#0f172a" />
+      <stop offset="100%" stopColor="#020617" />
+    </radialGradient>
   </defs>
 
-  <!-- Background rounded squircle -->
-  <rect width="64" height="64" rx="16" fill="url(#bgGrad)" />
-  <rect x="1" y="1" width="62" height="62" rx="15" stroke="rgba(255,255,255,0.12)" stroke-width="1.5" />
+  <!-- Background rounded rect -->
+  <rect width="100" height="100" rx="22" fill="url(#fav-bg)" />
+  <rect width="98" height="98" x="1" y="1" rx="21" stroke="#38bdf8" strokeWidth="1.5" strokeOpacity="0.3" fill="none" />
 
-  <!-- Outer compass dial ring -->
-  <circle cx="32" cy="32" r="22" stroke="url(#ringGrad)" stroke-width="2.5" stroke-dasharray="2 3" opacity="0.85" />
+  <!-- Outer Compass Coordinate Ring -->
+  <circle cx="50" cy="50" r="38" stroke="url(#fav-grad-primary)" strokeWidth="2" strokeOpacity="0.4" strokeDasharray="2 3" />
 
-  <!-- Cardinal tick marks -->
-  <line x1="32" y1="12" x2="32" y2="16" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" />
-  <line x1="32" y1="48" x2="32" y2="52" stroke="#64748b" stroke-width="2" stroke-linecap="round" />
-  <line x1="12" y1="32" x2="16" y2="32" stroke="#64748b" stroke-width="2" stroke-linecap="round" />
-  <line x1="48" y1="32" x2="52" y2="32" stroke="#64748b" stroke-width="2" stroke-linecap="round" />
+  <!-- 4 Cardinal Compass Tick Markers -->
+  <line x1="50" y1="8" x2="50" y2="14" stroke="#38bdf8" strokeWidth="2.5" strokeLinecap="round" />
+  <line x1="50" y1="86" x2="50" y2="92" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" />
+  <line x1="8" y1="50" x2="14" y2="50" stroke="#0284c7" strokeWidth="2.5" strokeLinecap="round" />
+  <line x1="86" y1="50" x2="92" y2="50" stroke="#34d399" strokeWidth="2.5" strokeLinecap="round" />
 
-  <!-- Compass Needle (Care / Medical Navigation Theme) -->
-  <!-- North Arrow (Cyan/Blue) -->
-  <polygon points="32,13 37,32 32,29" fill="url(#needleNorth)" />
-  <polygon points="32,13 27,32 32,29" fill="#0284c7" />
+  <!-- Inner Halo -->
+  <circle cx="50" cy="50" r="28" fill="url(#fav-grad-primary)" fillOpacity="0.1" stroke="url(#fav-grad-secondary)" strokeWidth="1.2" strokeOpacity="0.4" />
 
-  <!-- South Arrow (Slate) -->
-  <polygon points="32,51 37,32 32,35" fill="url(#needleSouth)" />
-  <polygon points="32,51 27,32 32,35" fill="#1e293b" />
+  <!-- Compass Needle / Medical Cross Arms -->
+  <path d="M50 18 L55 40 L50 45 L45 40 Z" fill="url(#fav-grad-accent)" />
+  <path d="M50 18 L55 40 L50 45 Z" fill="#ffffff" fillOpacity="0.3" />
+  <path d="M50 82 L45 60 L50 55 L55 60 Z" fill="url(#fav-grad-secondary)" />
+  <path d="M50 82 L45 60 L50 55 Z" fill="#ffffff" fillOpacity="0.2" />
+  <path d="M18 50 L40 45 L45 50 L40 55 Z" fill="url(#fav-grad-primary)" />
+  <path d="M18 50 L40 45 L45 50 Z" fill="#ffffff" fillOpacity="0.25" />
+  <path d="M82 50 L60 55 L55 50 L60 45 Z" fill="url(#fav-grad-secondary)" />
+  <path d="M82 50 L60 55 L55 50 Z" fill="#ffffff" fillOpacity="0.25" />
 
-  <!-- Central Pivot & Plus / Heartbeat pulse -->
-  <circle cx="32" cy="32" r="4.5" fill="#ffffff" />
-  <circle cx="32" cy="32" r="2" fill="#0284c7" />
+  <!-- Pulse Waveform -->
+  <path d="M35 50 L42 50 L46 42 L50 58 L54 45 L57 53 L60 50 L65 50" stroke="#ffffff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+  <circle cx="50" cy="50" r="2.5" fill="#ffffff" />
 </svg>

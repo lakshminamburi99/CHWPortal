@@ -2,6 +2,8 @@ import React from 'react';
 import { Card, CardContent } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
+import { Avatar } from '../../components/ui/Avatar';
+import { getAvatarForPatient } from '../../utils/avatars';
 
 // Supervisor shares the same patient list view, with additional CHW column
 const mockPatients = [
@@ -56,7 +58,17 @@ export const SupervisorPatientsPage = () => {
               {filtered.map(p => (
                 <tr key={p.id} style={{ borderBottom: '1px solid var(--color-border)' }}>
                   <td style={{ padding: '0.75rem 1rem', fontFamily: 'monospace', fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>{p.id}</td>
-                  <td style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>{p.name}</td>
+                  <td style={{ padding: '0.75rem 1rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <Avatar
+                        src={getAvatarForPatient(p.name, p.sex)}
+                        name={p.name}
+                        size="sm"
+                        shape="circle"
+                      />
+                      <span style={{ fontWeight: 600 }}>{p.name}</span>
+                    </div>
+                  </td>
                   <td style={{ padding: '0.75rem 1rem', color: 'var(--color-text-muted)' }}>{p.age} / {p.sex}</td>
                   <td style={{ padding: '0.75rem 1rem', color: 'var(--color-text-muted)' }}>{p.chw}</td>
                   <td style={{ padding: '0.75rem 1rem' }}><Badge variant={statusVariant[p.status]}>{statusLabel[p.status]}</Badge></td>

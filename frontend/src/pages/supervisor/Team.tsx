@@ -4,6 +4,8 @@ import { Card, CardContent } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
+import { Avatar } from '../../components/ui/Avatar';
+import { getAvatarForUser } from '../../utils/avatars';
 
 import { API_BASE } from '../../config';
 
@@ -87,14 +89,15 @@ export const SupervisorTeamPage = () => {
             <CardContent style={{ padding: '1.5rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                  <div style={{
-                    width: '48px', height: '48px', borderRadius: '50%',
-                    backgroundColor: 'var(--color-primary)', color: 'white',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontWeight: 700, fontSize: '1rem',
-                  }}>
-                    {(chw.name || 'CHW').split(' ').map((n: string) => n[0]).join('')}
-                  </div>
+                  <Avatar
+                    src={chw.avatar || getAvatarForUser(chw.name)}
+                    name={chw.name}
+                    role="CHW"
+                    size="lg"
+                    status={chw.status === 'ACTIVE' ? 'online' : 'offline'}
+                    border={true}
+                    borderColor="var(--primary)"
+                  />
                   <div>
                     <h3 style={{ fontWeight: 700, fontSize: '1rem' }}>{chw.name}</h3>
                     <p style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>{chw.region}</p>

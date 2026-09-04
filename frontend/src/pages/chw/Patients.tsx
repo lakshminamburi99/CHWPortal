@@ -6,6 +6,8 @@ import { Card, CardContent } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { useAuth } from '../../App';
 import { Modal } from '../../components/ui/Modal';
+import { Avatar } from '../../components/ui/Avatar';
+import { getAvatarForPatient } from '../../utils/avatars';
 import { formatDate } from '../../utils/formatters';
 import { API_BASE } from '../../config';
 
@@ -236,7 +238,17 @@ export const PatientsPage = () => {
                   onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
                 >
                   <td style={{ padding: '0.75rem 1rem', fontFamily: 'monospace', fontSize: '0.8rem', color: 'var(--muted-foreground)' }}>{p.id}</td>
-                  <td style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>{p.name}</td>
+                  <td style={{ padding: '0.75rem 1rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <Avatar
+                        src={getAvatarForPatient(p.name, p.sex)}
+                        name={p.name}
+                        size="sm"
+                        shape="circle"
+                      />
+                      <span style={{ fontWeight: 600, color: 'var(--foreground)' }}>{p.name}</span>
+                    </div>
+                  </td>
                   <td style={{ padding: '0.75rem 1rem', color: 'var(--muted-foreground)' }}>{p.age} / {p.sex}</td>
                   <td style={{ padding: '0.75rem 1rem' }}><span style={{ textTransform: 'uppercase', fontSize: '0.75rem', fontWeight: 600 }}>{p.language}</span></td>
                   <td style={{ padding: '0.75rem 1rem' }}>
@@ -379,13 +391,25 @@ export const PatientsPage = () => {
 
       {/* ── Patient Detail Modal ── */}
       <Modal isOpen={!!selectedPatient} onClose={() => setSelectedPatient(null)} title={
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-            <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: '0.85rem' }}>{selectedPatient?.id}</span>
-            {selectedPatient && <Badge variant={statusVariant[selectedPatient.status] || 'default'}>{selectedPatient.status}</Badge>}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          {selectedPatient && (
+            <Avatar
+              src={getAvatarForPatient(selectedPatient.name, selectedPatient.sex)}
+              name={selectedPatient.name}
+              size="lg"
+              shape="circle"
+              border={true}
+              borderColor="var(--primary)"
+            />
+          )}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: '0.85rem' }}>{selectedPatient?.id}</span>
+              {selectedPatient && <Badge variant={statusVariant[selectedPatient.status] || 'default'}>{selectedPatient.status}</Badge>}
+            </div>
+            <span style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--foreground)' }}>{selectedPatient?.name}</span>
+            <span style={{ fontSize: '0.8rem', color: 'var(--muted-foreground)' }}>{selectedPatient?.age} yrs · {selectedPatient?.sex} · Language: {selectedPatient?.language.toUpperCase()}</span>
           </div>
-          <span style={{ fontSize: '1.35rem', fontWeight: 700, color: 'var(--foreground)' }}>{selectedPatient?.name}</span>
-          <span style={{ fontSize: '0.85rem', color: 'var(--muted-foreground)' }}>{selectedPatient?.age} yrs · {selectedPatient?.sex} · Language: {selectedPatient?.language.toUpperCase()}</span>
         </div>
       }
       footer={<>

@@ -3,19 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../App';
 import { LanguageSelector } from '../../components/LanguageSelector';
+import { CareCompassLogo } from '../../components/CareCompassLogo';
+import { Avatar } from '../../components/ui/Avatar';
 import { API_BASE } from '../../config';
 
 // ─── Icon helpers ────────────────────────────────────────────────────────────
 const HelpIcon = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <circle cx="12" cy="12" r="10" /><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /><line x1="12" y1="17" x2="12.01" y2="17" />
-  </svg>
-);
-
-const CompassIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="10" />
-    <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" fill="currentColor" fillOpacity="0.25" />
   </svg>
 );
 
@@ -51,26 +46,31 @@ const MicIcon = () => (
 const demoAccounts = [
   {
     role: 'CHW' as const,
+    name: 'John Smith',
     email: 'demo-chw@example.com',
     workspace: 'Field workspace: assessments, referrals, follow-ups',
   },
   {
     role: 'SUPERVISOR' as const,
+    name: 'Amara Okafor',
     email: 'demo-supervisor@example.com',
     workspace: 'Supervisor workspace: triage, case review, coaching',
   },
   {
     role: 'PROGRAMME_MANAGER' as const,
+    name: 'Daniel Whitfield',
     email: 'demo-manager@example.com',
     workspace: 'Programme workspace: regions, districts, reports',
   },
   {
     role: 'REGIONAL_ADMIN' as const,
+    name: 'Rachel Summers',
     email: 'demo-regional-admin@example.com',
     workspace: 'Administration workspace: accounts and org units',
   },
   {
     role: 'SUPER_ADMIN' as const,
+    name: 'Dr. Anthony Vance',
     email: 'demo-admin@example.com',
     workspace: 'Administration workspace: platform configuration',
   },
@@ -140,21 +140,14 @@ export const SignIn = () => {
         overflow: 'hidden',
       }}>
         {/* Top branding */}
-        <div style={{ padding: '1.75rem 2rem', display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-          <div style={{
-            width: '34px', height: '34px',
-            backgroundColor: 'rgba(56, 189, 248, 0.15)',
-            border: '1px solid rgba(56, 189, 248, 0.3)',
-            borderRadius: '8px',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: '#38bdf8',
-          }}>
-            <CompassIcon />
-          </div>
-          <div>
-            <div style={{ fontWeight: 700, fontSize: '1.05rem', lineHeight: 1.2, color: 'white' }}>{t('app_name')}</div>
-            <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1 }}>{t('app_subtitle')}</div>
-          </div>
+        <div style={{ padding: '1.75rem 2rem' }}>
+          <CareCompassLogo
+            variant="horizontal"
+            size="md"
+            showSubtitle={true}
+            subtitleText={t('app_subtitle')}
+            theme="dark"
+          />
         </div>
 
         {/* Spacer */}
@@ -313,28 +306,44 @@ export const SignIn = () => {
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                     padding: '0.875rem 1.25rem',
                     borderTop: i > 0 ? '1px solid #f1f5f9' : 'none',
-                    gap: '1rem',
+                    gap: '0.85rem',
                   }}
                 >
+                  <Avatar
+                    name={acct.name}
+                    role={acct.role}
+                    size="sm"
+                    shape="circle"
+                    border={true}
+                    borderColor="#e2e8f0"
+                  />
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 600, fontSize: '0.82rem', color: '#0f172a', marginBottom: '0.15rem' }}>
-                      {t(`roles.${acct.role}`)}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.15rem' }}>
+                      <span style={{ fontWeight: 700, fontSize: '0.82rem', color: '#0f172a' }}>
+                        {acct.name}
+                      </span>
+                      <span style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 500 }}>
+                        ({t(`roles.${acct.role}`)})
+                      </span>
                     </div>
-                    <div style={{ fontSize: '0.72rem', color: '#64748b', marginBottom: '0.1rem' }}>
+                    <div style={{ fontSize: '0.72rem', color: '#475569', marginBottom: '0.1rem' }}>
                       {acct.email}
                     </div>
-                    <div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
+                    <div style={{ fontSize: '0.68rem', color: '#94a3b8' }}>
                       {acct.workspace}
                     </div>
                   </div>
                   <button
                     onClick={() => handleDemoLogin(acct.email)}
                     style={{
-                      padding: '0.3rem 0.75rem', borderRadius: '6px',
-                      border: '1px solid #e2e8f0', backgroundColor: 'white',
-                      fontSize: '0.78rem', fontWeight: 600, color: '#374151',
+                      padding: '0.35rem 0.8rem', borderRadius: '6px',
+                      border: '1px solid #cbd5e1', backgroundColor: '#f8fafc',
+                      fontSize: '0.78rem', fontWeight: 600, color: '#1e293b',
                       cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0,
+                      transition: 'all 0.15s ease',
                     }}
+                    onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#0284c7'; e.currentTarget.style.color = '#ffffff'; e.currentTarget.style.borderColor = '#0284c7'; }}
+                    onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#f8fafc'; e.currentTarget.style.color = '#1e293b'; e.currentTarget.style.borderColor = '#cbd5e1'; }}
                   >
                     {t('common.use')}
                   </button>

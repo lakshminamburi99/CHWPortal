@@ -1,9 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../App';
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
+import { Modal } from '../../components/ui/Modal';
+import { Avatar } from '../../components/ui/Avatar';
+import { DEFAULT_AVATARS_GALLERY, getAvatarForUser } from '../../utils/avatars';
 import { supportedLanguages } from '../../utils/languages';
 
 export const ProfilePage = () => {
@@ -12,6 +15,7 @@ export const ProfilePage = () => {
 
   const [fullName, setFullName] = useState(user?.name || 'John Smith');
   const [email, setEmail] = useState(user?.email || 'demo-chw@example.com');
+  const [avatar, setAvatar] = useState<string>(user?.avatar || getAvatarForUser(user || ''));
   const [phone, setPhone] = useState('+254 712 345 678');
   const [district, setDistrict] = useState('Riverside District');
   const [clinic, setClinic] = useState('Field Team Alpha (Clinic A)');
@@ -29,10 +33,17 @@ export const ProfilePage = () => {
   
   const [toast, setToast] = useState('');
   const [activeTab, setActiveTab] = useState<'profile' | 'security' | 'preferences' | 'activity'>('profile');
+  const [showAvatarModal, setShowAvatarModal] = useState(false);
+  const [customAvatarPreview, setCustomAvatarPreview] = useState<string>('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Load saved preferences
+  // Load saved preferences & avatar
   useEffect(() => {
     const saved = localStorage.getItem('user_profile_custom');
+    const savedAvatar = localStorage.getItem('user_profile_avatar');
+    if (savedAvatar) {
+      setAvatar(savedAvatar);
+    }
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
@@ -55,9 +66,11 @@ export const ProfilePage = () => {
       name: fullName,
       email: email,
       role: user?.role || 'CHW',
+      avatar: avatar,
     };
 
     login(updatedUser);
+    localStorage.setItem('user_profile_avatar', avatar);
 
     const customProfile = {
       phone,
@@ -76,6 +89,47 @@ export const ProfilePage = () => {
 
     setToast(t('common.success') || 'Profile and clinical preferences updated successfully! ✓');
     setTimeout(() => setToast(''), 3500);
+  };
+
+  const handleSelectPresetAvatar = (url: string) => {
+    setAvatar(url);
+    localStorage.setItem('user_profile_avatar', url);
+    if (user) {
+      login({ ...user, avatar: url });
+    }
+    setShowAvatarModal(false);
+    setToast('Profile picture updated successfully! ✓');
+    setTimeout(() => setToast(''), 3000);
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file (PNG, JPG, WebP, SVG)');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string;
+      setCustomAvatarPreview(dataUrl);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleApplyCustomUpload = () => {
+    if (!customAvatarPreview) return;
+    setAvatar(customAvatarPreview);
+    localStorage.setItem('user_profile_avatar', customAvatarPreview);
+    if (user) {
+      login({ ...user, avatar: customAvatarPreview });
+    }
+    setShowAvatarModal(false);
+    setCustomAvatarPreview('');
+    setToast('Custom photo uploaded successfully! ✓');
+    setTimeout(() => setToast(''), 3000);
   };
 
   const handlePasswordChange = (e: React.FormEvent) => {
@@ -129,15 +183,45 @@ export const ProfilePage = () => {
       <Card style={{ marginBottom: '1.5rem', background: 'linear-gradient(135deg, var(--card) 0%, var(--muted) 100%)' }}>
         <CardContent style={{ padding: '1.75rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
-            <div style={{
-              width: '80px', height: '80px', borderRadius: '50%',
-              backgroundColor: 'var(--primary)', color: 'var(--primary-foreground)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontWeight: 800, fontSize: '1.75rem',
-              boxShadow: '0 4px 10px rgba(14, 116, 144, 0.25)',
-            }}>
-              {(fullName || 'CHW').split(' ').map(n => n[0]).join('')}
+            <div style={{ position: 'relative' }}>
+              <Avatar
+                src={avatar}
+                name={fullName}
+                role={user?.role}
+                size="2xl"
+                status="online"
+                border={true}
+                borderColor="var(--primary)"
+              />
+              <button
+                type="button"
+                onClick={() => setShowAvatarModal(true)}
+                title="Change profile picture"
+                style={{
+                  position: 'absolute',
+                  bottom: '-4px',
+                  right: '-4px',
+                  width: '30px',
+                  height: '30px',
+                  borderRadius: '50%',
+                  backgroundColor: '#0284c7',
+                  color: 'white',
+                  border: '2px solid white',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '0.85rem',
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
+                  transition: 'transform 0.15s ease, background-color 0.15s ease',
+                }}
+                onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.1)')}
+                onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
+              >
+                📷
+              </button>
             </div>
+
             <div style={{ flex: 1, minWidth: '220px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem', flexWrap: 'wrap' }}>
                 <h2 style={{ fontSize: '1.35rem', fontWeight: 800, margin: 0 }}>{fullName}</h2>
@@ -151,9 +235,95 @@ export const ProfilePage = () => {
                 <span><strong>{t('profile.district')}:</strong> {district}</span>
               </div>
             </div>
+
+            <div>
+              <Button variant="outline" size="sm" onClick={() => setShowAvatarModal(true)}>
+                📷 Change Photo
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
+
+      {/* Modal: Avatar Picker & Photo Upload */}
+      <Modal
+        isOpen={showAvatarModal}
+        onClose={() => { setShowAvatarModal(false); setCustomAvatarPreview(''); }}
+        title="Choose Profile Picture"
+        footer={<>
+          <Button variant="outline" onClick={() => { setShowAvatarModal(false); setCustomAvatarPreview(''); }}>
+            {t('common.cancel')}
+          </Button>
+          {customAvatarPreview && (
+            <Button variant="primary" onClick={handleApplyCustomUpload}>
+              Apply Uploaded Photo
+            </Button>
+          )}
+        </>}
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          <div>
+            <h4 style={{ fontSize: '0.9rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--foreground)' }}>
+              Select from Healthcare Avatar Gallery
+            </h4>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '0.75rem' }}>
+              {DEFAULT_AVATARS_GALLERY.map(item => (
+                <div
+                  key={item.id}
+                  onClick={() => handleSelectPresetAvatar(item.url)}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    padding: '0.75rem 0.5rem',
+                    borderRadius: '8px',
+                    border: avatar === item.url ? '2px solid #0284c7' : '1px solid var(--border)',
+                    backgroundColor: avatar === item.url ? 'rgba(2, 132, 199, 0.08)' : 'var(--card)',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.borderColor = '#0284c7')}
+                  onMouseLeave={e => {
+                    if (avatar !== item.url) e.currentTarget.style.borderColor = 'var(--border)';
+                  }}
+                >
+                  <Avatar src={item.url} name={item.label} size="lg" shape="circle" />
+                  <span style={{ fontSize: '0.75rem', fontWeight: 600, marginTop: '0.5rem', textAlign: 'center' }}>
+                    {item.label}
+                  </span>
+                  <span style={{ fontSize: '0.65rem', color: 'var(--muted-foreground)', textAlign: 'center' }}>
+                    {item.role}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ borderTop: '1px solid var(--border)', paddingTop: '1.25rem' }}>
+            <h4 style={{ fontSize: '0.9rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--foreground)' }}>
+              Or Upload Custom Photo
+            </h4>
+            <input
+              type="file"
+              ref={fileInputRef}
+              accept="image/*"
+              style={{ display: 'none' }}
+              onChange={handleFileUpload}
+            />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+              <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
+                📁 Choose File from Device
+              </Button>
+              {customAvatarPreview && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Avatar src={customAvatarPreview} name="Preview" size="md" />
+                  <span style={{ fontSize: '0.8rem', color: '#16a34a', fontWeight: 600 }}>Ready to apply</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </Modal>
 
       {/* Navigation Tabs */}
       <div style={{ display: 'flex', gap: '0.5rem', borderBottom: '1px solid var(--border)', marginBottom: '1.5rem' }}>
