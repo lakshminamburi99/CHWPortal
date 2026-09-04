@@ -642,6 +642,7 @@ function App() {
               <Route path="/admin/super/audit" element={<AuditPage />} />
               <Route path="/admin/super/settings" element={<SettingsPage />} />
               <Route path="/admin/super/org-units" element={<OrgUnitsPage />} />
+              <Route path="/admin/super/org-units/:id" element={<OrgUnitDetailsPage />} />
               <Route path="/admin/super/notifications" element={<NotificationsPage />} />
               <Route path="/admin/super/profile" element={<ProfilePage />} />
             </Route>

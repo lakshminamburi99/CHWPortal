@@ -6,7 +6,7 @@ import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
 import { Avatar } from '../../components/ui/Avatar';
-import { DEFAULT_AVATARS_GALLERY, getAvatarForUser } from '../../utils/avatars';
+import { getAvatarForUser } from '../../utils/avatars';
 import { supportedLanguages } from '../../utils/languages';
 
 export const ProfilePage = () => {
@@ -15,7 +15,7 @@ export const ProfilePage = () => {
 
   const [fullName, setFullName] = useState(user?.name || 'John Smith');
   const [email, setEmail] = useState(user?.email || 'demo-chw@example.com');
-  const [avatar, setAvatar] = useState<string>(user?.avatar || getAvatarForUser(user || ''));
+  const [avatar, setAvatar] = useState<string>(user?.avatar !== undefined ? user.avatar : getAvatarForUser(user || ''));
   const [phone, setPhone] = useState('+254 712 345 678');
   const [district, setDistrict] = useState('Riverside District');
   const [clinic, setClinic] = useState('Field Team Alpha (Clinic A)');
@@ -35,13 +35,15 @@ export const ProfilePage = () => {
   const [activeTab, setActiveTab] = useState<'profile' | 'security' | 'preferences' | 'activity'>('profile');
   const [showAvatarModal, setShowAvatarModal] = useState(false);
   const [customAvatarPreview, setCustomAvatarPreview] = useState<string>('');
+  const [selectedFileName, setSelectedFileName] = useState<string>('');
+  const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Load saved preferences & avatar
   useEffect(() => {
     const saved = localStorage.getItem('user_profile_custom');
     const savedAvatar = localStorage.getItem('user_profile_avatar');
-    if (savedAvatar) {
+    if (savedAvatar !== null) {
       setAvatar(savedAvatar);
     }
     if (saved) {
@@ -91,32 +93,48 @@ export const ProfilePage = () => {
     setTimeout(() => setToast(''), 3500);
   };
 
-  const handleSelectPresetAvatar = (url: string) => {
-    setAvatar(url);
-    localStorage.setItem('user_profile_avatar', url);
-    if (user) {
-      login({ ...user, avatar: url });
-    }
-    setShowAvatarModal(false);
-    setToast('Profile picture updated successfully! ✓');
-    setTimeout(() => setToast(''), 3000);
-  };
-
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+  const processFile = (file: File) => {
     if (!file.type.startsWith('image/')) {
-      alert('Please select an image file (PNG, JPG, WebP, SVG)');
+      alert('Please select an image file (PNG, JPG, WebP, SVG, GIF)');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      alert('File size exceeds 5MB limit. Please choose a smaller image.');
       return;
     }
 
+    setSelectedFileName(file.name);
     const reader = new FileReader();
     reader.onload = (event) => {
       const dataUrl = event.target?.result as string;
       setCustomAvatarPreview(dataUrl);
     };
     reader.readAsDataURL(file);
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      processFile(file);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      processFile(file);
+    }
   };
 
   const handleApplyCustomUpload = () => {
@@ -128,7 +146,21 @@ export const ProfilePage = () => {
     }
     setShowAvatarModal(false);
     setCustomAvatarPreview('');
-    setToast('Custom photo uploaded successfully! ✓');
+    setSelectedFileName('');
+    setToast('Profile photo updated from local computer! ✓');
+    setTimeout(() => setToast(''), 3000);
+  };
+
+  const handleRemovePhoto = () => {
+    setAvatar('');
+    localStorage.setItem('user_profile_avatar', '');
+    if (user) {
+      login({ ...user, avatar: '' });
+    }
+    setShowAvatarModal(false);
+    setCustomAvatarPreview('');
+    setSelectedFileName('');
+    setToast('Profile photo removed. Initials will be displayed.');
     setTimeout(() => setToast(''), 3000);
   };
 
@@ -195,14 +227,18 @@ export const ProfilePage = () => {
               />
               <button
                 type="button"
-                onClick={() => setShowAvatarModal(true)}
+                onClick={() => {
+                  setCustomAvatarPreview('');
+                  setSelectedFileName('');
+                  setShowAvatarModal(true);
+                }}
                 title="Change profile picture"
                 style={{
                   position: 'absolute',
                   bottom: '-4px',
                   right: '-4px',
-                  width: '30px',
-                  height: '30px',
+                  width: '32px',
+                  height: '32px',
                   borderRadius: '50%',
                   backgroundColor: '#0284c7',
                   color: 'white',
@@ -210,7 +246,7 @@ export const ProfilePage = () => {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: '0.85rem',
+                  fontSize: '0.9rem',
                   cursor: 'pointer',
                   boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
                   transition: 'transform 0.15s ease, background-color 0.15s ease',
@@ -236,91 +272,166 @@ export const ProfilePage = () => {
               </div>
             </div>
 
-            <div>
-              <Button variant="outline" size="sm" onClick={() => setShowAvatarModal(true)}>
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setCustomAvatarPreview('');
+                  setSelectedFileName('');
+                  setShowAvatarModal(true);
+                }}
+              >
                 📷 Change Photo
               </Button>
+              {avatar && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleRemovePhoto}
+                  style={{ color: '#dc2626' }}
+                  title="Remove custom profile picture"
+                >
+                  🗑️ Remove
+                </Button>
+              )}
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Modal: Avatar Picker & Photo Upload */}
+      {/* Modal: Upload Photo from Local Computer or Remove */}
       <Modal
         isOpen={showAvatarModal}
-        onClose={() => { setShowAvatarModal(false); setCustomAvatarPreview(''); }}
-        title="Choose Profile Picture"
-        footer={<>
-          <Button variant="outline" onClick={() => { setShowAvatarModal(false); setCustomAvatarPreview(''); }}>
-            {t('common.cancel')}
-          </Button>
-          {customAvatarPreview && (
-            <Button variant="primary" onClick={handleApplyCustomUpload}>
-              Apply Uploaded Photo
-            </Button>
-          )}
-        </>}
-      >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          <div>
-            <h4 style={{ fontSize: '0.9rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--foreground)' }}>
-              Select from Healthcare Avatar Gallery
-            </h4>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '0.75rem' }}>
-              {DEFAULT_AVATARS_GALLERY.map(item => (
-                <div
-                  key={item.id}
-                  onClick={() => handleSelectPresetAvatar(item.url)}
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    padding: '0.75rem 0.5rem',
-                    borderRadius: '8px',
-                    border: avatar === item.url ? '2px solid #0284c7' : '1px solid var(--border)',
-                    backgroundColor: avatar === item.url ? 'rgba(2, 132, 199, 0.08)' : 'var(--card)',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s ease',
-                  }}
-                  onMouseEnter={e => (e.currentTarget.style.borderColor = '#0284c7')}
-                  onMouseLeave={e => {
-                    if (avatar !== item.url) e.currentTarget.style.borderColor = 'var(--border)';
-                  }}
+        onClose={() => {
+          setShowAvatarModal(false);
+          setCustomAvatarPreview('');
+          setSelectedFileName('');
+        }}
+        title="Update Profile Picture"
+        footer={
+          <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
+            <div>
+              {avatar ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleRemovePhoto}
+                  style={{ color: '#dc2626', borderColor: '#fca5a5' }}
                 >
-                  <Avatar src={item.url} name={item.label} size="lg" shape="circle" />
-                  <span style={{ fontSize: '0.75rem', fontWeight: 600, marginTop: '0.5rem', textAlign: 'center' }}>
-                    {item.label}
-                  </span>
-                  <span style={{ fontSize: '0.65rem', color: 'var(--muted-foreground)', textAlign: 'center' }}>
-                    {item.role}
-                  </span>
-                </div>
-              ))}
+                  🗑️ Remove Photo
+                </Button>
+              ) : (
+                <span style={{ fontSize: '0.8rem', color: 'var(--muted-foreground)' }}>No photo set</span>
+              )}
+            </div>
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setShowAvatarModal(false);
+                  setCustomAvatarPreview('');
+                  setSelectedFileName('');
+                }}
+              >
+                {t('common.cancel')}
+              </Button>
+              {customAvatarPreview && (
+                <Button variant="primary" size="sm" onClick={handleApplyCustomUpload}>
+                  Apply Photo
+                </Button>
+              )}
             </div>
           </div>
+        }
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          {/* Current vs New Preview */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '2rem', padding: '1rem', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px solid var(--border)' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem' }}>
+              <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--muted-foreground)', textTransform: 'uppercase' }}>
+                Current Photo
+              </span>
+              <Avatar src={avatar} name={fullName} size="xl" status="online" />
+            </div>
 
-          <div style={{ borderTop: '1px solid var(--border)', paddingTop: '1.25rem' }}>
-            <h4 style={{ fontSize: '0.9rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--foreground)' }}>
-              Or Upload Custom Photo
-            </h4>
+            {customAvatarPreview && (
+              <>
+                <span style={{ fontSize: '1.5rem', color: '#94a3b8' }}>➔</span>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem' }}>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#16a34a', textTransform: 'uppercase' }}>
+                    New Preview
+                  </span>
+                  <Avatar src={customAvatarPreview} name={fullName} size="xl" status="online" border={true} borderColor="#16a34a" />
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Drag & Drop / File Browser Box */}
+          <div>
             <input
               type="file"
               ref={fileInputRef}
-              accept="image/*"
+              accept="image/png, image/jpeg, image/jpg, image/webp, image/svg+xml, image/gif"
               style={{ display: 'none' }}
               onChange={handleFileUpload}
             />
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-              <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
-                📁 Choose File from Device
+
+            <div
+              onClick={() => fileInputRef.current?.click()}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              style={{
+                border: `2px dashed ${isDragging ? '#0284c7' : 'var(--border)'}`,
+                backgroundColor: isDragging ? '#f0f9ff' : 'var(--card)',
+                borderRadius: '10px',
+                padding: '2rem 1.5rem',
+                textAlign: 'center',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+              }}
+              onMouseEnter={e => {
+                if (!isDragging) e.currentTarget.style.borderColor = '#0284c7';
+              }}
+              onMouseLeave={e => {
+                if (!isDragging) e.currentTarget.style.borderColor = 'var(--border)';
+              }}
+            >
+              <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>📁</div>
+              <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--foreground)', marginBottom: '0.25rem' }}>
+                Upload photo from your computer
+              </div>
+              <p style={{ fontSize: '0.8rem', color: 'var(--muted-foreground)', margin: '0 0 1rem' }}>
+                Drag and drop an image here, or click to browse files
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  fileInputRef.current?.click();
+                }}
+              >
+                Browse Local Files
               </Button>
-              {customAvatarPreview && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <Avatar src={customAvatarPreview} name="Preview" size="md" />
-                  <span style={{ fontSize: '0.8rem', color: '#16a34a', fontWeight: 600 }}>Ready to apply</span>
-                </div>
-              )}
             </div>
+
+            {selectedFileName && (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.75rem', padding: '0.5rem 0.75rem', backgroundColor: '#f0fdf4', borderRadius: '6px', border: '1px solid #bbf7d0', fontSize: '0.8rem' }}>
+                <span style={{ fontWeight: 600, color: '#166534' }}>
+                  ✓ Selected: {selectedFileName}
+                </span>
+                <span style={{ color: '#15803d', fontWeight: 600 }}>Ready to apply</span>
+              </div>
+            )}
+            
+            <p style={{ fontSize: '0.72rem', color: 'var(--muted-foreground)', marginTop: '0.5rem', textAlign: 'center' }}>
+              Supported formats: PNG, JPG, JPEG, WebP, SVG, GIF (Max size: 5MB)
+            </p>
           </div>
         </div>
       </Modal>

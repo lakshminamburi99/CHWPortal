@@ -60,8 +60,8 @@ export const Avatar: React.FC<AvatarProps> = ({
   const [imgError, setImgError] = useState(false);
   const px = typeof size === 'number' ? size : sizePixels[size] || 40;
 
-  // Resolve source: explicit src, or lookup helper
-  const resolvedSrc = src || (name ? getAvatarForUser({ name, role }) : undefined);
+  // Resolve source: explicit src (if empty string, don't fall back to portrait), or lookup helper
+  const resolvedSrc = src === '' ? undefined : (src || (name ? getAvatarForUser({ name, role }) : undefined));
 
   // Compute initials
   const initials = (name || 'U')
