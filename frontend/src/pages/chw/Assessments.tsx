@@ -7,6 +7,8 @@ import { Badge } from '../../components/ui/Badge';
 import { useAuth } from '../../App';
 import { API_BASE } from '../../config';
 import { offlineSyncService } from '../../services/offlineSync';
+import { VoiceDictationButton } from '../../components/VoiceDictationButton';
+import { MultilingualAudioPlayer } from '../../components/MultilingualAudioPlayer';
 
 const templates = [
   { id: 'tpl-maternal', name: 'Maternal Health Assessment', category: 'MATERNAL', description: 'Comprehensive assessment for pregnant and post-partum women.', duration: 15 },
@@ -413,7 +415,21 @@ export const AssessmentsPage = () => {
             The assessment record for <strong>{patientName}</strong> ({patientId}) has been submitted to the protocol engine. Case status is updated in the clinical registry.
           </p>
         )}
-        <div style={{ display: 'flex', gap: '1rem' }}>
+        {/* Multilingual Spoken Caregiver Audio Guidance */}
+        <div style={{ width: '100%', maxWidth: '720px', marginTop: '1.5rem', textAlign: 'left' }}>
+          <MultilingualAudioPlayer
+            initialProtocolKey={
+              selectedTemplate?.id === 'tpl-maternal' ? 'MATERNAL_ANC' :
+              selectedTemplate?.id === 'tpl-chronic' ? 'CHRONIC_HYPERTENSION' :
+              selectedTemplate?.id === 'tpl-surveillance' ? 'MALARIA_FEVER' :
+              answers['q2'] === 'Yes' ? 'MALARIA_FEVER' :
+              'CHILD_PNEUMONIA'
+            }
+            patientName={patientName}
+          />
+        </div>
+
+        <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
           <Button variant="outline" onClick={() => { setSavedOffline(false); setPhase('select-template'); }}>New assessment</Button>
           <Button variant="primary" onClick={() => navigate('/chw/cases')}>View cases →</Button>
         </div>
@@ -470,17 +486,35 @@ export const AssessmentsPage = () => {
             </p>
           )}
 
-          {/* AI Voice Assistant trigger */}
-          <div style={{ marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={triggerGeminiVoiceAssistant}
-              style={{ fontSize: '0.8rem', gap: '0.4rem', borderColor: '#3b82f6', color: '#1d4ed8' }}
-            >
-              ✨ AI Voice Simulation (Gemini)
-            </Button>
-            <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Powered by Google Gemini</span>
+          {/* Real-time Web Speech Dictation & AI Assistant Header */}
+          <div style={{ marginBottom: '1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
+            <VoiceDictationButton
+              currentValue={currentAnswer}
+              onTranscript={text => {
+                if (question.type === 'text') {
+                  setCurrentAnswer(text);
+                } else if (question.type === 'choice') {
+                  const lower = text.toLowerCase();
+                  const matched = question.options?.find(opt =>
+                    lower.includes(opt.toLowerCase()) || opt.toLowerCase().includes(lower)
+                  );
+                  if (matched) setCurrentAnswer(matched);
+                }
+              }}
+              label="Dictate Answer (Voice)"
+              size="md"
+            />
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={triggerGeminiVoiceAssistant}
+                style={{ fontSize: '0.78rem', gap: '0.35rem', borderColor: '#3b82f6', color: '#1d4ed8' }}
+              >
+                ✨ AI Assistant Extract
+              </Button>
+            </div>
           </div>
 
           {question.type === 'text' ? (
