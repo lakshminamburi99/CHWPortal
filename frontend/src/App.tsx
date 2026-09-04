@@ -3,6 +3,9 @@ import { BrowserRouter, Routes, Route, Navigate, Outlet, NavLink, useNavigate } 
 import { useTranslation } from 'react-i18next';
 import { API_BASE } from './config';
 import { CWSTbot } from './components/CWSTbot';
+import { CareCompassLogo } from './components/CareCompassLogo';
+import { Avatar } from './components/ui/Avatar';
+import { getAvatarForUser } from './utils/avatars';
 
 // ---------------------------------------------------------
 // Types
@@ -14,6 +17,7 @@ export interface AuthUser {
   name: string;
   email: string;
   role: Role;
+  avatar?: string;
 }
 
 // ---------------------------------------------------------
@@ -36,7 +40,19 @@ export const useAuth = () => {
 const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<AuthUser | null>(() => {
     const saved = localStorage.getItem('user');
-    return saved ? JSON.parse(saved) : null;
+    const customAvatar = localStorage.getItem('user_profile_avatar');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (customAvatar && !parsed.avatar) {
+          parsed.avatar = customAvatar;
+        }
+        return parsed;
+      } catch {
+        return null;
+      }
+    }
+    return null;
   });
   const [loading, setLoading] = useState(true);
 
@@ -277,12 +293,17 @@ const getNavConfig = (t: (key: string) => string): Record<Role, { section: strin
   ],
 });
 
-const CompassLogoIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="10" />
-    <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" fill="currentColor" fillOpacity="0.3" />
-  </svg>
-);
+const getProfilePath = (role: Role) => {
+  switch (role) {
+    case 'CHW': return '/chw/profile';
+    case 'SUPERVISOR': return '/supervisor/profile';
+    case 'MANAGER':
+    case 'PROGRAMME_MANAGER': return '/manager/profile';
+    case 'REGIONAL_ADMIN': return '/admin/regional/profile';
+    case 'SUPER_ADMIN': return '/admin/super/profile';
+    default: return '/chw/profile';
+  }
+};
 
 // ---------------------------------------------------------
 // Sidebar Component
@@ -294,7 +315,7 @@ const Sidebar = () => {
   if (!user) return null;
   const isRtl = i18n.dir() === 'rtl';
   const sections = getNavConfig(t)[user.role];
-  const initials = user.name.split(' ').map(n => n[0]).join('');
+  const userAvatar = user.avatar || getAvatarForUser(user);
 
   return (
     <aside style={{
@@ -311,27 +332,17 @@ const Sidebar = () => {
     }}>
       {/* Brand */}
       <div style={{ padding: '1.25rem 1.25rem 1rem', borderBottom: '1px solid var(--sidebar-border)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.25rem' }}>
-          <div style={{
-            width: '30px', height: '30px',
-            borderRadius: '8px',
-            backgroundColor: 'var(--sidebar-primary)',
-            color: 'var(--sidebar-primary-foreground)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
-          }}>
-            <CompassLogoIcon />
-          </div>
-          <div style={{ fontWeight: 700, fontSize: '1.05rem', color: 'var(--sidebar-foreground)', letterSpacing: '-0.01em' }}>
-            {t('app_name')}
-          </div>
-        </div>
-        <div style={{ fontSize: '0.67rem', color: 'rgba(255,255,255,0.45)', paddingInlineStart: '38px' }}>
-          {t('app_subtitle')}
+        <div style={{ marginBottom: '0.6rem' }}>
+          <CareCompassLogo
+            variant="horizontal"
+            size="sm"
+            showSubtitle={true}
+            subtitleText={t('app_subtitle')}
+            theme="sidebar"
+          />
         </div>
         <div style={{
           display: 'inline-block',
-          marginTop: '0.75rem',
           padding: '0.2rem 0.6rem',
           backgroundColor: 'var(--sidebar-accent)',
           borderRadius: 'var(--radius-sm)',
@@ -388,19 +399,34 @@ const Sidebar = () => {
 
       {/* Footer: Profile + Sign out */}
       <div style={{ padding: '1rem 1.25rem', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
-          <div style={{
-            width: '34px', height: '34px',
-            borderRadius: '50%',
-            backgroundColor: 'var(--sidebar-primary)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontWeight: 700, fontSize: '0.75rem', color: 'var(--sidebar-primary-foreground)',
-          }}>
-            {initials}
-          </div>
+        <div
+          onClick={() => navigate(getProfilePath(user.role))}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.75rem',
+            marginBottom: '1rem',
+            cursor: 'pointer',
+            padding: '0.35rem',
+            borderRadius: 'var(--radius-sm)',
+            transition: 'background-color var(--transition-fast)',
+          }}
+          title="View profile & preferences"
+          onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.06)')}
+          onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
+        >
+          <Avatar
+            src={userAvatar}
+            name={user.name}
+            role={user.role}
+            size="md"
+            status="online"
+            border={true}
+            borderColor="rgba(56, 189, 248, 0.4)"
+          />
           <div style={{ minWidth: 0, flex: 1 }}>
             <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--sidebar-foreground)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.name}</div>
-            <div style={{ fontSize: '0.67rem', color: 'rgba(255,255,255,0.4)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.email}</div>
+            <div style={{ fontSize: '0.67rem', color: 'rgba(255,255,255,0.5)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.email}</div>
           </div>
         </div>
         <button
@@ -428,8 +454,9 @@ const Sidebar = () => {
 const Header = () => {
   const { user } = useAuth();
   const { t } = useTranslation();
+  const navigate = useNavigate();
   if (!user) return null;
-  const initials = user.name.split(' ').map((n: string) => n[0]).join('');
+  const userAvatar = user.avatar || getAvatarForUser(user);
 
   return (
     <header style={{
@@ -462,15 +489,20 @@ const Header = () => {
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
         <LanguageSelector variant="dropdown" />
-        <div style={{
-          width: '34px', height: '34px', borderRadius: '50%',
-          backgroundColor: 'var(--primary)',
-          color: 'var(--primary-foreground)',
-          fontWeight: 700, fontSize: '0.75rem',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          cursor: 'pointer',
-        }}>
-          {initials}
+        <div
+          onClick={() => navigate(getProfilePath(user.role))}
+          title="Account Settings"
+          style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+        >
+          <Avatar
+            src={userAvatar}
+            name={user.name}
+            role={user.role}
+            size="sm"
+            status="online"
+            border={true}
+            borderColor="var(--primary)"
+          />
         </div>
       </div>
     </header>

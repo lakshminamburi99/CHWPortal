@@ -3,6 +3,8 @@ import { Card, CardContent } from '../../../components/ui/Card';
 import { Badge } from '../../../components/ui/Badge';
 import { Button } from '../../../components/ui/Button';
 import { Modal } from '../../../components/ui/Modal';
+import { Avatar } from '../../../components/ui/Avatar';
+import { getAvatarForUser } from '../../../utils/avatars';
 
 import { API_BASE } from '../../../config';
 
@@ -191,7 +193,18 @@ export const UsersPage = () => {
             <tbody>
               {filtered.map(u => (
                 <tr key={u.id} style={{ borderBottom: '1px solid var(--color-border)' }}>
-                  <td style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>{u.name}</td>
+                  <td style={{ padding: '0.75rem 1rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <Avatar
+                        src={u.avatar || getAvatarForUser(u)}
+                        name={u.name}
+                        role={u.role}
+                        size="sm"
+                        status={u.status === 'ACTIVE' ? 'online' : 'offline'}
+                      />
+                      <span style={{ fontWeight: 600 }}>{u.name}</span>
+                    </div>
+                  </td>
                   <td style={{ padding: '0.75rem 1rem', color: 'var(--color-text-muted)', fontSize: '0.8rem' }}>{u.email}</td>
                   <td style={{ padding: '0.75rem 1rem' }}>
                     <Badge variant={roleVariant[u.role] || 'default'}>{u.role ? u.role.replace('_', ' ') : 'CHW'}</Badge>

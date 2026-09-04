@@ -4,6 +4,8 @@ import { Card, CardContent } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
+import { Avatar } from '../../components/ui/Avatar';
+import { getAvatarForUser } from '../../utils/avatars';
 import { API_BASE } from '../../config';
 
 // ---------------------------------------------------------
@@ -823,8 +825,19 @@ export const SupervisorDashboard: React.FC = () => {
                   {filteredChws.map(w => (
                     <tr key={w.id} style={{ borderBottom: '1px solid var(--border)' }}>
                       <td style={{ padding: '0.875rem 1rem' }}>
-                        <div style={{ fontWeight: 600, color: 'var(--foreground)' }}>{w.name}</div>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--muted-foreground)' }}>{w.region} · {w.email}</div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                          <Avatar
+                            src={w.avatar || getAvatarForUser(w.name)}
+                            name={w.name}
+                            role="CHW"
+                            size="sm"
+                            status={w.status === 'ACTIVE' ? 'online' : 'offline'}
+                          />
+                          <div>
+                            <div style={{ fontWeight: 600, color: 'var(--foreground)' }}>{w.name}</div>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--muted-foreground)' }}>{w.region} · {w.email}</div>
+                          </div>
+                        </div>
                       </td>
                       <td style={{ padding: '0.875rem 1rem' }}>
                         <Badge variant={statusVariant[w.status] || 'default'}>
