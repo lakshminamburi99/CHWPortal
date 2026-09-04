@@ -45,6 +45,22 @@ def test_swarm_query_endpoint():
     data = res.json()
     assert data["bot_name"] == "CWSTbot"
     assert len(data["swarm_agents_executed"]) >= 4
+    assert "patient_context" in data
+    assert data["patient_context"]["name"] == "Ahmed Robinson"
+
+def test_patient_context_endpoint():
+    res = client.get("/api/v1/agent/patient-context/PT-2026-0001")
+    assert res.status_code in [200, 404]
+    if res.status_code == 200:
+        data = res.json()
+        assert "name" in data
+        assert "latest_vitals" in data
+
+def test_patients_roster_endpoint():
+    res = client.get("/api/v1/agent/patients-roster")
+    assert res.status_code == 200
+    data = res.json()
+    assert isinstance(data, list)
 
 def test_vision_scan_endpoint():
     res = client.post("/api/v1/agent/vision-scan", json={"imageBase64": "mock_rdt_image"})

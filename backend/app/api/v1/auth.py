@@ -44,6 +44,8 @@ class UserOut(BaseModel):
     role:               Optional[str]
     permissions:        list[str]
     preferred_language: str
+    avatar:             Optional[str] = None
+    phone:              Optional[str] = None
     organization_id:    Optional[str]
     region_id:          Optional[str]
     district_id:        Optional[str]
@@ -70,6 +72,8 @@ def _build_user_out(user: UserModel) -> UserOut:
         role=user.effective_role,
         permissions=sorted(user.permission_codes),
         preferred_language=user.preferred_language,
+        avatar=user.avatar,
+        phone=user.phone,
         organization_id=user.organization_id,
         region_id=user.region_id,
         district_id=user.district_id,
@@ -200,6 +204,60 @@ def get_session(
     current_user: UserModel = Depends(get_current_user),
 ):
     """Returns the current authenticated user's safe profile. Used by the frontend on app load."""
+    return _build_user_out(current_user)
+
+
+# ── PATCH /profile ────────────────────────────────────────────────────────────
+class ProfileUpdateRequest(BaseModel):
+    name: Optional[str] = None
+    phone: Optional[str] = None
+    preferred_language: Optional[str] = None
+    avatar: Optional[str] = None
+
+
+@router.patch("/profile", response_model=UserOut)
+def update_profile(
+    payload: ProfileUpdateRequest,
+    current_user: UserModel = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Update current user's profile attributes including profile avatar, phone, and name."""
+    if payload.name is not None:
+        current_user.display_name = payload.name
+        # Split first and last name if possible
+        parts = payload.name.strip().split(" ", 1)
+        current_user.first_name = parts[0]
+        if len(parts) > 1:
+            current_user.last_name = parts[1]
+
+    if payload.phone is not None:
+        current_user.phone = payload.phone
+
+    if payload.preferred_language is not None:
+        current_user.preferred_language = payload.preferred_language
+
+    if payload.avatar is not None:
+        current_user.avatar = payload.avatar if payload.avatar.strip() else None
+
+    # Sync to PlatformUserModel if exists
+    from app.models.user import PlatformUserModel
+    platform_user = db.query(PlatformUserModel).filter(
+        (PlatformUserModel.id == current_user.id) | (PlatformUserModel.email == current_user.email)
+    ).first()
+    if platform_user:
+        if payload.name is not None:
+            platform_user.name = payload.name
+        if payload.avatar is not None:
+            platform_user.avatar = payload.avatar if payload.avatar.strip() else None
+
+    write_audit(
+        db,
+        AuditAction.USER_UPDATED,
+        user_id=current_user.id,
+        new_values={"avatar_updated": payload.avatar is not None, "name": current_user.display_name},
+    )
+    db.commit()
+    db.refresh(current_user)
     return _build_user_out(current_user)
 
 

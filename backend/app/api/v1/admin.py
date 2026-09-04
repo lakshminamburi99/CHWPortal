@@ -14,7 +14,7 @@ from app.models.admin import (
     SystemSettingModel,
 )
 from app.models.org import RegionModel
-from app.schemas.user import PlatformUserSchema, UserStatusUpdate, UserRoleUpdate, InviteUserRequest
+from app.schemas.user import PlatformUserSchema, UserStatusUpdate, UserRoleUpdate, InviteUserRequest, UserAvatarUpdate
 from app.schemas.admin import (
     OrgUnitSchema,
     OrgUnitCreate,
@@ -122,6 +122,7 @@ def to_platform_user_schema(u: PlatformUserModel) -> PlatformUserSchema:
         status=u.status,
         lastSignIn=u.last_sign_in,
         mfaEnabled=u.mfa_enabled,
+        avatar=u.avatar,
     )
 
 @router.get("/users", response_model=List[PlatformUserSchema])
@@ -183,6 +184,7 @@ def invite_user(payload: InviteUserRequest, db: Session = Depends(get_db), curre
         status="INVITED",
         last_sign_in="Never",
         mfa_enabled=False,
+        avatar=payload.avatar,
     )
     db.add(new_user)
     log_audit(
@@ -261,6 +263,34 @@ def set_user_role(id: str, payload: UserRoleUpdate, db: Session = Depends(get_db
         action=f"Changed role to {payload.role}",
         target=user.email,
         severity="CRITICAL",
+    )
+    db.commit()
+    db.refresh(user)
+    return to_platform_user_schema(user)
+
+@router.patch("/users/{id}/avatar", response_model=PlatformUserSchema)
+def set_user_avatar(id: str, payload: UserAvatarUpdate, db: Session = Depends(get_db), current_user: UserModel = Depends(get_current_user)):
+    user = db.query(PlatformUserModel).filter(PlatformUserModel.id == id).first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="USER_NOT_FOUND")
+    _require_user_in_scope(db, current_user, user)
+
+    user.avatar = payload.avatar if payload.avatar and payload.avatar.strip() else None
+
+    # Sync to UserModel if exists
+    core_user = db.query(UserModel).filter(
+        (UserModel.id == id) | (UserModel.email == user.email)
+    ).first()
+    if core_user:
+        core_user.avatar = user.avatar
+
+    log_audit(
+        db,
+        actor=current_user.display_name or current_user.username,
+        role=current_user.effective_role,
+        action="Updated user profile picture" if user.avatar else "Removed user profile picture",
+        target=user.email,
+        severity="INFO",
     )
     db.commit()
     db.refresh(user)

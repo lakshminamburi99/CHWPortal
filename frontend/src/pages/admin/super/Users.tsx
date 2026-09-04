@@ -42,6 +42,7 @@ export const UsersPage = () => {
   const [inspectUser, setInspectUser] = useState<any | null>(null);
   const [editingRoleUser, setEditingRoleUser] = useState<any | null>(null);
   const [newRole, setNewRole] = useState('CHW');
+  const userFileInputRef = React.useRef<HTMLInputElement>(null);
 
   // Form states
   const [inviteName, setInviteName] = useState('');
@@ -49,6 +50,61 @@ export const UsersPage = () => {
   const [inviteRole, setInviteRole] = useState('CHW');
   const [inviteOrgUnit, setInviteOrgUnit] = useState('FTA');
   const [toast, setToast] = useState('');
+
+  const handleAvatarFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !inspectUser) return;
+
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file (PNG, JPG, WebP, SVG, GIF)');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      alert('File size exceeds 5MB limit. Please choose a smaller image.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      const dataUrl = event.target?.result as string;
+      const token = localStorage.getItem('access_token');
+      try {
+        await fetch(`${API_BASE}/admin/users/${inspectUser.id}/avatar`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({ avatar: dataUrl }),
+        });
+        setUsers(prev => prev.map(u => u.id === inspectUser.id ? { ...u, avatar: dataUrl } : u));
+        setInspectUser((prev: any) => ({ ...prev, avatar: dataUrl }));
+        setToast(`Profile photo updated from local computer for ${inspectUser.name} ✓`);
+        setTimeout(() => setToast(''), 3000);
+      } catch {}
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveUserAvatar = async (targetUser: any) => {
+    const token = localStorage.getItem('access_token');
+    try {
+      await fetch(`${API_BASE}/admin/users/${targetUser.id}/avatar`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ avatar: null }),
+      });
+      setUsers(prev => prev.map(u => u.id === targetUser.id ? { ...u, avatar: undefined } : u));
+      if (inspectUser && inspectUser.id === targetUser.id) {
+        setInspectUser((prev: any) => ({ ...prev, avatar: undefined }));
+      }
+      setToast(`Profile photo removed for ${targetUser.name} ✓`);
+      setTimeout(() => setToast(''), 3000);
+    } catch {}
+  };
 
   const fetchUsers = () => {
     const token = localStorage.getItem('access_token');
@@ -469,22 +525,81 @@ export const UsersPage = () => {
       >
         {inspectUser && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem', backgroundColor: 'var(--muted)', borderRadius: '8px' }}>
-              <Avatar
-                src={inspectUser.avatar || getAvatarForUser(inspectUser)}
-                name={inspectUser.name}
-                role={inspectUser.role}
-                size="xl"
-                status={inspectUser.status === 'ACTIVE' ? 'online' : 'offline'}
-                border={true}
-                borderColor="var(--primary)"
-              />
-              <div>
-                <h3 style={{ fontSize: '1.2rem', fontWeight: 800, margin: '0 0 0.25rem' }}>{inspectUser.name}</h3>
-                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                  <Badge variant={roleVariant[inspectUser.role] || 'default'}>{inspectUser.role}</Badge>
-                  <Badge variant={statusVariant[inspectUser.status] || 'default'}>{inspectUser.status}</Badge>
+            <input
+              type="file"
+              ref={userFileInputRef}
+              accept="image/*"
+              style={{ display: 'none' }}
+              onChange={handleAvatarFileChange}
+            />
+
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', padding: '1.25rem', backgroundColor: 'var(--muted)', borderRadius: '10px', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <div style={{ position: 'relative' }}>
+                  <Avatar
+                    src={inspectUser.avatar || getAvatarForUser(inspectUser)}
+                    name={inspectUser.name}
+                    role={inspectUser.role}
+                    size="xl"
+                    status={inspectUser.status === 'ACTIVE' ? 'online' : 'offline'}
+                    border={true}
+                    borderColor="var(--primary)"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => userFileInputRef.current?.click()}
+                    title="Upload photo from local computer"
+                    style={{
+                      position: 'absolute',
+                      bottom: '-4px',
+                      right: '-4px',
+                      width: '28px',
+                      height: '28px',
+                      borderRadius: '50%',
+                      backgroundColor: '#0284c7',
+                      color: 'white',
+                      border: '2px solid white',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '0.8rem',
+                      cursor: 'pointer',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                    }}
+                  >
+                    📷
+                  </button>
                 </div>
+
+                <div>
+                  <h3 style={{ fontSize: '1.2rem', fontWeight: 800, margin: '0 0 0.25rem' }}>{inspectUser.name}</h3>
+                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                    <Badge variant={roleVariant[inspectUser.role] || 'default'}>{inspectUser.role}</Badge>
+                    <Badge variant={statusVariant[inspectUser.status] || 'default'}>{inspectUser.status}</Badge>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  type="button"
+                  onClick={() => userFileInputRef.current?.click()}
+                >
+                  📁 Upload Photo
+                </Button>
+                {inspectUser.avatar && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    type="button"
+                    style={{ color: '#dc2626' }}
+                    onClick={() => handleRemoveUserAvatar(inspectUser)}
+                  >
+                    🗑️ Remove
+                  </Button>
+                )}
               </div>
             </div>
 

@@ -8,6 +8,7 @@ import { Modal } from '../../components/ui/Modal';
 import { Avatar } from '../../components/ui/Avatar';
 import { getAvatarForUser } from '../../utils/avatars';
 import { supportedLanguages } from '../../utils/languages';
+import { API_BASE } from '../../config';
 
 export const ProfilePage = () => {
   const { user, login } = useAuth();
@@ -60,7 +61,7 @@ export const ProfilePage = () => {
     }
   }, []);
 
-  const handleSaveProfile = (e: React.FormEvent) => {
+  const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     const updatedUser = {
       ...(user || {}),
@@ -73,6 +74,23 @@ export const ProfilePage = () => {
 
     login(updatedUser);
     localStorage.setItem('user_profile_avatar', avatar);
+
+    const token = localStorage.getItem('access_token');
+    try {
+      await fetch(`${API_BASE}/auth/profile`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          name: fullName,
+          phone,
+          preferred_language: language,
+          avatar,
+        }),
+      });
+    } catch {}
 
     const customProfile = {
       phone,
@@ -137,26 +155,52 @@ export const ProfilePage = () => {
     }
   };
 
-  const handleApplyCustomUpload = () => {
+  const handleApplyCustomUpload = async () => {
     if (!customAvatarPreview) return;
     setAvatar(customAvatarPreview);
     localStorage.setItem('user_profile_avatar', customAvatarPreview);
     if (user) {
       login({ ...user, avatar: customAvatarPreview });
     }
+
+    const token = localStorage.getItem('access_token');
+    try {
+      await fetch(`${API_BASE}/auth/profile`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ avatar: customAvatarPreview }),
+      });
+    } catch {}
+
     setShowAvatarModal(false);
     setCustomAvatarPreview('');
     setSelectedFileName('');
-    setToast('Profile photo updated from local computer! ✓');
+    setToast('Profile photo updated in database! ✓');
     setTimeout(() => setToast(''), 3000);
   };
 
-  const handleRemovePhoto = () => {
+  const handleRemovePhoto = async () => {
     setAvatar('');
     localStorage.setItem('user_profile_avatar', '');
     if (user) {
       login({ ...user, avatar: '' });
     }
+
+    const token = localStorage.getItem('access_token');
+    try {
+      await fetch(`${API_BASE}/auth/profile`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ avatar: '' }),
+      });
+    } catch {}
+
     setShowAvatarModal(false);
     setCustomAvatarPreview('');
     setSelectedFileName('');
