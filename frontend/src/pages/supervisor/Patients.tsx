@@ -22,9 +22,38 @@ const statusLabel: Record<string, string> = {
   HIGH_PRIORITY: 'High priority', FOLLOW_UP: 'Follow-up', REFERRED: 'Referred', ACTIVE: 'Active', INACTIVE: 'Inactive',
 };
 
+import { API_BASE } from '../../config';
+
 export const SupervisorPatientsPage = () => {
+  const [patients, setPatients] = React.useState(mockPatients);
   const [search, setSearch] = React.useState('');
-  const filtered = mockPatients.filter(p => p.name.toLowerCase().includes(search.toLowerCase()) || p.id.includes(search));
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    const token = localStorage.getItem('access_token');
+    fetch(`${API_BASE}/patients`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    })
+      .then(res => (res.ok ? res.json() : []))
+      .then(data => {
+        if (Array.isArray(data) && data.length > 0) {
+          const mapped = data.map((p: any) => ({
+            id: p.id,
+            name: `${p.firstName} ${p.lastName}`,
+            age: p.age || 30,
+            sex: p.sex || 'Female',
+            status: p.status || 'ACTIVE',
+            lastVisit: p.lastVisit || 'Aug 20, 2026',
+            chw: p.assignedChwName || 'John Smith',
+          }));
+          setPatients(mapped);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  const filtered = patients.filter(p => p.name.toLowerCase().includes(search.toLowerCase()) || p.id.includes(search));
 
   return (
     <div>

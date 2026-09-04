@@ -5,6 +5,7 @@ import { Badge } from '../../../components/ui/Badge';
 import { Button } from '../../../components/ui/Button';
 import { Avatar } from '../../../components/ui/Avatar';
 import { getAvatarForUser } from '../../../utils/avatars';
+import { GeospatialOutbreakMap } from '../../../components/GeospatialOutbreakMap';
 import { API_BASE } from '../../../config';
 
 export const RegionalAdminDashboard = () => {
@@ -213,6 +214,11 @@ export const RegionalAdminDashboard = () => {
             </div>
           </CardContent>
         </Card>
+      </div>
+
+      {/* ── Real-Time Sentinel Geospatial Outbreak & Surveillance GIS ── */}
+      <div style={{ marginBottom: '2rem' }}>
+        <GeospatialOutbreakMap />
       </div>
     </div>
   );

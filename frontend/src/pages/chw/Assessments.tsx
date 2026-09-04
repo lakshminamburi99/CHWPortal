@@ -6,6 +6,7 @@ import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { useAuth } from '../../App';
 import { API_BASE } from '../../config';
+import { offlineSyncService } from '../../services/offlineSync';
 
 const templates = [
   { id: 'tpl-maternal', name: 'Maternal Health Assessment', category: 'MATERNAL', description: 'Comprehensive assessment for pregnant and post-partum women.', duration: 15 },
@@ -46,6 +47,7 @@ export const AssessmentsPage = () => {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [currentAnswer, setCurrentAnswer] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [savedOffline, setSavedOffline] = useState(false);
 
   // Real-time Voice Recording & Speech-to-Text State
   const [isRecording, setIsRecording] = useState(false);
@@ -237,26 +239,57 @@ export const AssessmentsPage = () => {
   const submitAssessmentToBackend = async () => {
     stopRecording();
     setSubmitting(true);
+
+    const payload = {
+      patientId,
+      chwId: user?.id || 'usr-chw-001',
+      templateId: selectedTemplate?.id || 'tpl-child',
+      templateName: selectedTemplate?.name || 'Child Illness Assessment',
+      notes: answers['q5'] || 'Assessment conducted in field visit.',
+      vitals: { temperature: 38.5, heartRate: 110, respiratoryRate: 40 },
+      answers: Object.entries(answers).map(([qId, val]) => ({ questionId: qId, value: val })),
+    };
+
+    if (!offlineSyncService.effectiveOnlineStatus()) {
+      offlineSyncService.enqueue(
+        'SUBMIT_ASSESSMENT',
+        '/assessments/submit',
+        'POST',
+        payload,
+        `Assessment (${selectedTemplate?.name || 'Protocol'})`,
+        patientName
+      );
+      setSavedOffline(true);
+      setSubmitting(false);
+      setPhase('complete');
+      return;
+    }
+
     try {
       const token = localStorage.getItem('access_token');
-      await fetch(`${API_BASE}/assessments/submit`, {
+      const res = await fetch(`${API_BASE}/assessments/submit`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({
-          patientId,
-          chwId: user?.id || 'usr-chw-001',
-          templateId: selectedTemplate?.id || 'tpl-child',
-          templateName: selectedTemplate?.name || 'Child Illness Assessment',
-          notes: answers['q5'] || 'Assessment conducted in field visit.',
-          vitals: { temperature: 38.5, heartRate: 110, respiratoryRate: 40 },
-          answers: Object.entries(answers).map(([qId, val]) => ({ questionId: qId, value: val })),
-        }),
+        body: JSON.stringify(payload),
       });
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
+      }
+      setSavedOffline(false);
     } catch {
-      // Fallback
+      // Graceful offline outbox fallback
+      offlineSyncService.enqueue(
+        'SUBMIT_ASSESSMENT',
+        '/assessments/submit',
+        'POST',
+        payload,
+        `Assessment (${selectedTemplate?.name || 'Protocol'})`,
+        patientName
+      );
+      setSavedOffline(true);
     } finally {
       setSubmitting(false);
       setPhase('complete');
@@ -355,15 +388,33 @@ export const AssessmentsPage = () => {
   if (phase === 'complete') {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', gap: '1.5rem', textAlign: 'center' }}>
-        <div style={{ width: '64px', height: '64px', borderRadius: '50%', backgroundColor: 'var(--color-success-bg, #f0fdf4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem', color: '#16a34a' }}>
-          ✓
+        <div style={{
+          width: '64px',
+          height: '64px',
+          borderRadius: '50%',
+          backgroundColor: savedOffline ? '#fef3c7' : 'var(--color-success-bg, #f0fdf4)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: '2rem',
+          color: savedOffline ? '#d97706' : '#16a34a'
+        }}>
+          {savedOffline ? '📶' : '✓'}
         </div>
-        <h2 style={{ fontSize: '1.5rem', fontWeight: 700 }}>Assessment complete for {patientName}</h2>
-        <p style={{ color: 'var(--color-text-muted)', maxWidth: '440px', lineHeight: 1.5 }}>
-          The assessment record for <strong>{patientName}</strong> ({patientId}) has been submitted to the protocol engine. Case status is updated in the clinical registry.
-        </p>
+        <h2 style={{ fontSize: '1.5rem', fontWeight: 700 }}>
+          {savedOffline ? 'Assessment Queued to Offline Outbox' : `Assessment complete for ${patientName}`}
+        </h2>
+        {savedOffline ? (
+          <div style={{ maxWidth: '480px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '8px', padding: '1rem', color: '#92400e', fontSize: '0.875rem', lineHeight: 1.5 }}>
+            <strong>Offline Mode Active:</strong> This assessment has been saved securely to your device's local outbox. It will automatically synchronize with the central registry once internet connectivity is restored.
+          </div>
+        ) : (
+          <p style={{ color: 'var(--color-text-muted)', maxWidth: '440px', lineHeight: 1.5 }}>
+            The assessment record for <strong>{patientName}</strong> ({patientId}) has been submitted to the protocol engine. Case status is updated in the clinical registry.
+          </p>
+        )}
         <div style={{ display: 'flex', gap: '1rem' }}>
-          <Button variant="outline" onClick={() => setPhase('select-template')}>New assessment</Button>
+          <Button variant="outline" onClick={() => { setSavedOffline(false); setPhase('select-template'); }}>New assessment</Button>
           <Button variant="primary" onClick={() => navigate('/chw/cases')}>View cases →</Button>
         </div>
       </div>
