@@ -8,13 +8,10 @@ on:
   workflow_dispatch:
 
 env:
-  GCP_PROJECT_ID: chwportal
   GCP_REGION: us-central1
   ARTIFACT_REPO: chw-repo
   DB_INSTANCE: chw-db-instance
   DB_NAME: chw_care_db
-  GCP_WORKLOAD_IDENTITY_PROVIDER: projects/803722345404/locations/global/workloadIdentityPools/github-pool-v5/providers/github-provider-v5
-  GCP_SERVICE_ACCOUNT: github-actions-deployer@chwportal.iam.gserviceaccount.com
 
 jobs:
   # ─────────────────────────────────────────────────────────────────────────────
@@ -34,8 +31,8 @@ jobs:
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
-          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER || env.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT || env.GCP_SERVICE_ACCOUNT }}
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
 
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
@@ -54,10 +51,8 @@ jobs:
 
       - name: Build & Push Backend Image
         run: |
-          PROJECT_ID="${{ secrets.GCP_PROJECT_ID }}"
-          if [ -z "$PROJECT_ID" ]; then PROJECT_ID="${{ env.GCP_PROJECT_ID }}"; fi
-          IMAGE_TAG="${{ env.GCP_REGION }}-docker.pkg.dev/${PROJECT_ID}/${{ env.ARTIFACT_REPO }}/backend:${{ github.sha }}"
-          IMAGE_LATEST="${{ env.GCP_REGION }}-docker.pkg.dev/${PROJECT_ID}/${{ env.ARTIFACT_REPO }}/backend:latest"
+          IMAGE_TAG="${{ env.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.ARTIFACT_REPO }}/backend:${{ github.sha }}"
+          IMAGE_LATEST="${{ env.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.ARTIFACT_REPO }}/backend:latest"
           docker build -t "$IMAGE_TAG" -t "$IMAGE_LATEST" ./backend
           docker push "$IMAGE_TAG"
           docker push "$IMAGE_LATEST"
@@ -80,8 +75,8 @@ jobs:
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
-          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER || env.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT || env.GCP_SERVICE_ACCOUNT }}
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
 
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
@@ -99,9 +94,6 @@ jobs:
 
       - name: Deploy Backend to Cloud Run
         run: |
-          PROJECT_ID="${{ secrets.GCP_PROJECT_ID }}"
-          if [ -z "$PROJECT_ID" ]; then PROJECT_ID="${{ env.GCP_PROJECT_ID }}"; fi
-
           CONN_NAME="${{ steps.cloudsql.outputs.connection_name }}"
 
           DB_PASS="${{ secrets.DB_PASSWORD }}"
@@ -118,7 +110,7 @@ jobs:
           DB_URI="postgresql://postgres:${DB_PASS_ENCODED}@/${{ env.DB_NAME }}?host=/cloudsql/${CONN_NAME}"
 
           gcloud run deploy chw-backend \
-            --image="${{ env.GCP_REGION }}-docker.pkg.dev/${PROJECT_ID}/${{ env.ARTIFACT_REPO }}/backend:${{ github.sha }}" \
+            --image="${{ env.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.ARTIFACT_REPO }}/backend:${{ github.sha }}" \
             --region=${{ env.GCP_REGION }} \
             --platform=managed \
             --allow-unauthenticated \
@@ -136,11 +128,9 @@ jobs:
 
       - name: Build & Push Frontend Image
         run: |
-          PROJECT_ID="${{ secrets.GCP_PROJECT_ID }}"
-          if [ -z "$PROJECT_ID" ]; then PROJECT_ID="${{ env.GCP_PROJECT_ID }}"; fi
           BACKEND_API_URL="${{ steps.backend_url.outputs.url }}/api/v1"
-          IMAGE_TAG="${{ env.GCP_REGION }}-docker.pkg.dev/${PROJECT_ID}/${{ env.ARTIFACT_REPO }}/frontend:${{ github.sha }}"
-          IMAGE_LATEST="${{ env.GCP_REGION }}-docker.pkg.dev/${PROJECT_ID}/${{ env.ARTIFACT_REPO }}/frontend:latest"
+          IMAGE_TAG="${{ env.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.ARTIFACT_REPO }}/frontend:${{ github.sha }}"
+          IMAGE_LATEST="${{ env.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.ARTIFACT_REPO }}/frontend:latest"
           gcloud auth configure-docker ${{ env.GCP_REGION }}-docker.pkg.dev --quiet
           docker build --build-arg VITE_API_URL="$BACKEND_API_URL" \
             -t "$IMAGE_TAG" -t "$IMAGE_LATEST" ./frontend
@@ -149,10 +139,8 @@ jobs:
 
       - name: Deploy Frontend to Cloud Run
         run: |
-          PROJECT_ID="${{ secrets.GCP_PROJECT_ID }}"
-          if [ -z "$PROJECT_ID" ]; then PROJECT_ID="${{ env.GCP_PROJECT_ID }}"; fi
           gcloud run deploy chw-frontend \
-            --image="${{ env.GCP_REGION }}-docker.pkg.dev/${PROJECT_ID}/${{ env.ARTIFACT_REPO }}/frontend:${{ github.sha }}" \
+            --image="${{ env.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.ARTIFACT_REPO }}/frontend:${{ github.sha }}" \
             --region=${{ env.GCP_REGION }} \
             --platform=managed \
             --allow-unauthenticated \
