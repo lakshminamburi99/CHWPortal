@@ -1,6 +1,6 @@
 # AUTHENTICATION.md — Care Compass Platform
 
-## Overview
+## Overview Document
 
 The Care Compass Platform uses **JWT-based stateless authentication** combined with **server-side session tracking** to provide both scalability and the ability to immediately revoke sessions.
 
