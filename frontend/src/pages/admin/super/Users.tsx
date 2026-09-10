@@ -30,6 +30,17 @@ const ROLE_DESCRIPTIONS: Record<string, string> = {
   CHW: 'Community outreach, household visits, protocol assessments, and referrals.',
 };
 
+const FALLBACK_USERS = [
+  { id: 'usr-adm-001', name: 'Dr. Anthony Vance', email: 'demo-admin@example.com', role: 'SUPER_ADMIN', orgUnitId: 'RHA', orgUnit: 'Riverside Health Authority', status: 'ACTIVE', lastSignIn: 'Today, 2:45 PM', mfaEnabled: true, phone: '+1-555-0190' },
+  { id: 'usr-reg-001', name: 'Rachel Summers', email: 'demo-regional-admin@example.com', role: 'REGIONAL_ADMIN', orgUnitId: 'WR', orgUnit: 'Western Region', status: 'ACTIVE', lastSignIn: 'Today, 1:10 PM', mfaEnabled: true, phone: '+1-555-0191' },
+  { id: 'usr-mgr-001', name: 'Daniel Whitfield', email: 'demo-manager@example.com', role: 'PROGRAMME_MANAGER', orgUnitId: 'RD', orgUnit: 'Riverside District', status: 'ACTIVE', lastSignIn: 'Today, 11:30 AM', mfaEnabled: true, phone: '+1-555-0192' },
+  { id: 'usr-sup-001', name: 'Amara Okafor', email: 'demo-supervisor@example.com', role: 'SUPERVISOR', orgUnitId: 'RD', orgUnit: 'Riverside District', status: 'ACTIVE', lastSignIn: 'Today, 1:40 PM', mfaEnabled: true, phone: '+1-555-0193' },
+  { id: 'usr-chw-001', name: 'John Smith', email: 'demo-chw@example.com', role: 'CHW', orgUnitId: 'FTA', orgUnit: 'Field Team Alpha', status: 'ACTIVE', lastSignIn: 'Today, 2:15 PM', mfaEnabled: false, phone: '+1-555-0194' },
+  { id: 'usr-chw-002', name: 'Aisha Patel', email: 'aisha.patel@chwcare.health', role: 'CHW', orgUnitId: 'FTA', orgUnit: 'Field Team Alpha', status: 'ACTIVE', lastSignIn: 'Today, 12:20 PM', mfaEnabled: false, phone: '+1-555-0195' },
+  { id: 'usr-chw-003', name: 'Emmanuel Diaz', email: 'emmanuel.diaz@chwcare.health', role: 'CHW', orgUnitId: 'FTA', orgUnit: 'Field Team Alpha', status: 'INVITED', lastSignIn: 'Never', mfaEnabled: false, phone: '+1-555-0196' },
+  { id: 'usr-chw-004', name: 'Mei Lin Chen', email: 'meilin.chen@chwcare.health', role: 'CHW', orgUnitId: 'FTA', orgUnit: 'Field Team Alpha', status: 'ACTIVE', lastSignIn: 'Yesterday, 4:00 PM', mfaEnabled: false, phone: '+1-555-0197' },
+];
+
 export const UsersPage = () => {
   const [users, setUsers] = useState<any[]>([]);
   const [search, setSearch] = useState('');
@@ -75,6 +86,7 @@ export const UsersPage = () => {
             'Content-Type': 'application/json',
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
+          credentials: 'include',
           body: JSON.stringify({ avatar: dataUrl }),
         });
         setUsers(prev => prev.map(u => u.id === inspectUser.id ? { ...u, avatar: dataUrl } : u));
@@ -95,6 +107,7 @@ export const UsersPage = () => {
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
+        credentials: 'include',
         body: JSON.stringify({ avatar: null }),
       });
       setUsers(prev => prev.map(u => u.id === targetUser.id ? { ...u, avatar: undefined } : u));
@@ -107,28 +120,23 @@ export const UsersPage = () => {
   };
 
   const fetchUsers = () => {
+    setLoading(true);
     const token = localStorage.getItem('access_token');
     fetch(`${API_BASE}/admin/users`, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
+      credentials: 'include',
     })
       .then(r => r.ok ? r.json() : [])
       .then(data => {
         if (Array.isArray(data) && data.length > 0) {
           setUsers(data);
         } else {
-          setUsers([
-            { id: 'usr-adm-001', name: 'Dr. Anthony Vance', email: 'demo-admin@example.com', role: 'SUPER_ADMIN', orgUnitId: 'RHA', orgUnit: 'Riverside Health Authority', status: 'ACTIVE', lastSignIn: 'Today, 2:45 PM', mfaEnabled: true, phone: '+1-555-0190' },
-            { id: 'usr-reg-001', name: 'Rachel Summers', email: 'demo-regional-admin@example.com', role: 'REGIONAL_ADMIN', orgUnitId: 'WR', orgUnit: 'Western Region', status: 'ACTIVE', lastSignIn: 'Today, 1:10 PM', mfaEnabled: true, phone: '+1-555-0191' },
-            { id: 'usr-mgr-001', name: 'Daniel Whitfield', email: 'demo-manager@example.com', role: 'PROGRAMME_MANAGER', orgUnitId: 'RD', orgUnit: 'Riverside District', status: 'ACTIVE', lastSignIn: 'Today, 11:30 AM', mfaEnabled: true, phone: '+1-555-0192' },
-            { id: 'usr-sup-001', name: 'Amara Okafor', email: 'demo-supervisor@example.com', role: 'SUPERVISOR', orgUnitId: 'RD', orgUnit: 'Riverside District', status: 'ACTIVE', lastSignIn: 'Today, 1:40 PM', mfaEnabled: true, phone: '+1-555-0193' },
-            { id: 'usr-chw-001', name: 'John Smith', email: 'demo-chw@example.com', role: 'CHW', orgUnitId: 'FTA', orgUnit: 'Field Team Alpha', status: 'ACTIVE', lastSignIn: 'Today, 2:15 PM', mfaEnabled: false, phone: '+1-555-0194' },
-            { id: 'usr-chw-002', name: 'Aisha Patel', email: 'aisha.patel@chwcare.health', role: 'CHW', orgUnitId: 'FTA', orgUnit: 'Field Team Alpha', status: 'ACTIVE', lastSignIn: 'Today, 12:20 PM', mfaEnabled: false, phone: '+1-555-0195' },
-            { id: 'usr-chw-003', name: 'Emmanuel Diaz', email: 'emmanuel.diaz@chwcare.health', role: 'CHW', orgUnitId: 'FTA', orgUnit: 'Field Team Alpha', status: 'INVITED', lastSignIn: 'Never', mfaEnabled: false, phone: '+1-555-0196' },
-            { id: 'usr-chw-004', name: 'Mei Lin Chen', email: 'meilin.chen@chwcare.health', role: 'CHW', orgUnitId: 'FTA', orgUnit: 'Field Team Alpha', status: 'ACTIVE', lastSignIn: 'Yesterday, 4:00 PM', mfaEnabled: false, phone: '+1-555-0197' },
-          ]);
+          setUsers(FALLBACK_USERS);
         }
       })
-      .catch(() => {})
+      .catch(() => {
+        setUsers(FALLBACK_USERS);
+      })
       .finally(() => setLoading(false));
   };
 
@@ -147,6 +155,7 @@ export const UsersPage = () => {
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
+        credentials: 'include',
         body: JSON.stringify({
           name: inviteName,
           email: inviteEmail,
@@ -192,6 +201,7 @@ export const UsersPage = () => {
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
+        credentials: 'include',
         body: JSON.stringify({ role: newRole }),
       });
       setUsers(prev => prev.map(u => u.id === editingRoleUser.id ? { ...u, role: newRole } : u));
@@ -214,6 +224,7 @@ export const UsersPage = () => {
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
+        credentials: 'include',
         body: JSON.stringify({ status: nextStatus }),
       });
       setUsers(prev => prev.map(u => u.id === user.id ? { ...u, status: nextStatus } : u));
@@ -232,6 +243,7 @@ export const UsersPage = () => {
       await fetch(`${API_BASE}/admin/users/${user.id}/mfa`, {
         method: 'POST',
         headers: token ? { Authorization: `Bearer ${token}` } : {},
+        credentials: 'include',
       });
       setUsers(prev => prev.map(u => u.id === user.id ? { ...u, mfaEnabled: nextMfa } : u));
       if (inspectUser && inspectUser.id === user.id) {
@@ -276,7 +288,10 @@ export const UsersPage = () => {
             Global user directory, role assignments, security credentials, and organization bindings
           </p>
         </div>
-        <div style={{ display: 'flex', gap: '0.75rem' }}>
+        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+          <Button variant="outline" onClick={fetchUsers} disabled={loading} title="Reload users from server">
+            {loading ? '⏳ Refreshing...' : '🔄 Refresh'}
+          </Button>
           <Button variant="outline" onClick={exportCSV}>
             📥 Export CSV
           </Button>
@@ -404,101 +419,118 @@ export const UsersPage = () => {
               </tr>
             </thead>
             <tbody>
-              {filteredUsers.map(u => (
-                <tr
-                  key={u.id}
-                  style={{ borderBottom: '1px solid var(--border)' }}
-                  onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--muted)')}
-                  onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
-                >
-                  <td style={{ padding: '0.75rem 1rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                      <Avatar
-                        src={u.avatar || getAvatarForUser(u)}
-                        name={u.name}
-                        role={u.role}
-                        size="sm"
-                        status={u.status === 'ACTIVE' ? 'online' : 'offline'}
-                      />
-                      <div>
-                        <div style={{ fontWeight: 700, color: 'var(--foreground)' }}>{u.name}</div>
-                        <div style={{ fontSize: '0.72rem', color: 'var(--muted-foreground)', fontFamily: 'monospace' }}>{u.id}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td style={{ padding: '0.75rem 1rem', color: 'var(--muted-foreground)', fontSize: '0.82rem' }}>
-                    {u.email}
-                  </td>
-                  <td style={{ padding: '0.75rem 1rem' }}>
-                    <Badge variant={roleVariant[u.role] || 'default'}>
-                      {(u.role || 'CHW').replace('_', ' ')}
-                    </Badge>
-                  </td>
-                  <td style={{ padding: '0.75rem 1rem', color: 'var(--muted-foreground)' }}>
-                    <span style={{ fontWeight: 600, color: 'var(--foreground)' }}>{u.orgUnitId || 'RHA'}</span>
-                    <div style={{ fontSize: '0.7rem' }}>{u.orgUnit || 'Regional Authority'}</div>
-                  </td>
-                  <td style={{ padding: '0.75rem 1rem' }}>
-                    <Badge variant={statusVariant[u.status] || 'default'}>
-                      {u.status}
-                    </Badge>
-                  </td>
-                  <td style={{ padding: '0.75rem 1rem', color: 'var(--muted-foreground)', fontSize: '0.8rem' }}>
-                    {u.lastSignIn || 'Recently'}
-                  </td>
-                  <td style={{ padding: '0.75rem 1rem' }}>
-                    <button
-                      onClick={() => toggleMfa(u)}
-                      style={{
-                        background: 'none',
-                        border: 'none',
-                        cursor: 'pointer',
-                        fontSize: '0.78rem',
-                        fontWeight: 600,
-                        color: u.mfaEnabled ? '#16a34a' : '#94a3b8',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.25rem',
-                      }}
-                      title="Click to toggle MFA"
-                    >
-                      {u.mfaEnabled ? '🔒 Enabled' : '🔓 Disabled'}
-                    </button>
-                  </td>
-                  <td style={{ padding: '0.75rem 1rem' }}>
-                    <div style={{ display: 'flex', gap: '0.4rem' }}>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setInspectUser(u)}
-                      >
-                        Inspect
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => { setEditingRoleUser(u); setNewRole(u.role); }}
-                      >
-                        Role
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant={u.status === 'ACTIVE' ? 'outline' : 'primary'}
-                        onClick={() => toggleStatus(u)}
-                        style={{ color: u.status === 'ACTIVE' ? '#dc2626' : undefined }}
-                      >
-                        {u.status === 'ACTIVE' ? 'Suspend' : 'Activate'}
-                      </Button>
+              {loading ? (
+                <tr>
+                  <td colSpan={8} style={{ padding: '3.5rem 1rem', textAlign: 'center', color: 'var(--muted-foreground)' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.75rem' }}>
+                      <div style={{
+                        width: '26px',
+                        height: '26px',
+                        border: '3px solid var(--border)',
+                        borderTopColor: 'var(--primary)',
+                        borderRadius: '50%',
+                        animation: 'spin 0.8s linear infinite',
+                      }} />
+                      <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>Loading platform users...</span>
                     </div>
                   </td>
                 </tr>
-              ))}
-              {filteredUsers.length === 0 && (
+              ) : filteredUsers.length === 0 ? (
                 <tr>
                   <td colSpan={8} style={{ padding: '3rem', textAlign: 'center', color: 'var(--muted-foreground)' }}>
                     No users matching your search filters.
                   </td>
                 </tr>
+              ) : (
+                filteredUsers.map(u => (
+                  <tr
+                    key={u.id}
+                    style={{ borderBottom: '1px solid var(--border)' }}
+                    onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--muted)')}
+                    onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
+                  >
+                    <td style={{ padding: '0.75rem 1rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <Avatar
+                          src={u.avatar || getAvatarForUser(u)}
+                          name={u.name}
+                          role={u.role}
+                          size="sm"
+                          status={u.status === 'ACTIVE' ? 'online' : 'offline'}
+                        />
+                        <div>
+                          <div style={{ fontWeight: 700, color: 'var(--foreground)' }}>{u.name}</div>
+                          <div style={{ fontSize: '0.72rem', color: 'var(--muted-foreground)', fontFamily: 'monospace' }}>{u.id}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td style={{ padding: '0.75rem 1rem', color: 'var(--muted-foreground)', fontSize: '0.82rem' }}>
+                      {u.email}
+                    </td>
+                    <td style={{ padding: '0.75rem 1rem' }}>
+                      <Badge variant={roleVariant[u.role] || 'default'}>
+                        {(u.role || 'CHW').replace('_', ' ')}
+                      </Badge>
+                    </td>
+                    <td style={{ padding: '0.75rem 1rem', color: 'var(--muted-foreground)' }}>
+                      <span style={{ fontWeight: 600, color: 'var(--foreground)' }}>{u.orgUnitId || 'RHA'}</span>
+                      <div style={{ fontSize: '0.7rem' }}>{u.orgUnit || 'Regional Authority'}</div>
+                    </td>
+                    <td style={{ padding: '0.75rem 1rem' }}>
+                      <Badge variant={statusVariant[u.status] || 'default'}>
+                        {u.status}
+                      </Badge>
+                    </td>
+                    <td style={{ padding: '0.75rem 1rem', color: 'var(--muted-foreground)', fontSize: '0.8rem' }}>
+                      {u.lastSignIn || 'Recently'}
+                    </td>
+                    <td style={{ padding: '0.75rem 1rem' }}>
+                      <button
+                        onClick={() => toggleMfa(u)}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          fontSize: '0.78rem',
+                          fontWeight: 600,
+                          color: u.mfaEnabled ? '#16a34a' : '#94a3b8',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.25rem',
+                        }}
+                        title="Click to toggle MFA"
+                      >
+                        {u.mfaEnabled ? '🔒 Enabled' : '🔓 Disabled'}
+                      </button>
+                    </td>
+                    <td style={{ padding: '0.75rem 1rem' }}>
+                      <div style={{ display: 'flex', gap: '0.4rem' }}>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setInspectUser(u)}
+                        >
+                          Inspect
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => { setEditingRoleUser(u); setNewRole(u.role); }}
+                        >
+                          Role
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant={u.status === 'ACTIVE' ? 'outline' : 'primary'}
+                          onClick={() => toggleStatus(u)}
+                          style={{ color: u.status === 'ACTIVE' ? '#dc2626' : undefined }}
+                        >
+                          {u.status === 'ACTIVE' ? 'Suspend' : 'Activate'}
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
               )}
             </tbody>
           </table>

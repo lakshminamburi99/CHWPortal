@@ -1,10 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from typing import List, Dict
+from typing import List, Dict, Optional, Union, Any
 from datetime import datetime, timezone
 from app.api.deps import get_db
 from app.models.user import PlatformUserModel, UserModel
+from app.models.rbac import RoleModel, UserRoleModel
 from app.core.rbac import require_role, get_current_user
+from app.core.security import hash_password
 from app.models.admin import (
     OrgUnitModel,
     AuditEventModel,
@@ -59,7 +61,7 @@ def get_regional_stats(db: Session = Depends(get_db), current_user: UserModel = 
                 (OrgUnitModel.parent_id == region_code)
             ).all()]
             l3_ids = [u.id for u in db.query(OrgUnitModel).filter(OrgUnitModel.parent_id.in_(l1_l2_ids)).all()]
-            org_ids = list(set(l1_l2_ids + l3_ids))
+            org_ids = list(set(l1_l2_ids + l3_ids + [region_code]))
             
             org_query = org_query.filter(OrgUnitModel.id.in_(org_ids))
             user_query = user_query.filter(PlatformUserModel.org_unit_id.in_(org_ids))
@@ -69,6 +71,8 @@ def get_regional_stats(db: Session = Depends(get_db), current_user: UserModel = 
             user_query = user_query.filter(PlatformUserModel.id == "NONE")
 
     total = user_query.count()
+    if total == 0 and current_user.effective_role != "REGIONAL_ADMIN":
+        total = db.query(UserModel).filter(UserModel.deleted_at.is_(None)).count()
     orgs = org_query.count()
     pending = user_query.filter(PlatformUserModel.status == "INVITED").count()
     suspended = user_query.filter(PlatformUserModel.status == "SUSPENDED").count()
@@ -81,7 +85,9 @@ def get_regional_stats(db: Session = Depends(get_db), current_user: UserModel = 
 
 @router.get("/stats/super", response_model=SuperStatsResponse)
 def get_super_stats(db: Session = Depends(get_db)):
-    users = db.query(PlatformUserModel).count()
+    core_users_count = db.query(UserModel).filter(UserModel.deleted_at.is_(None)).count()
+    platform_users_count = db.query(PlatformUserModel).count()
+    users = max(core_users_count, platform_users_count)
     regions = db.query(OrgUnitModel).filter(OrgUnitModel.type == "REGION").count()
     orgs = db.query(OrgUnitModel).count()
     audits = db.query(AuditEventModel).count()
@@ -99,54 +105,102 @@ def get_super_stats(db: Session = Depends(get_db)):
     )
 
 
-def log_audit(db: Session, actor: str, role: str, action: str, target: str, severity: str):
+def log_audit(
+    db: Session,
+    actor: Optional[Union[str, Any]],
+    role: Optional[Union[str, Any]],
+    action: str,
+    target: Optional[Union[str, Any]],
+    severity: str,
+) -> None:
     audit_count = db.query(AuditEventModel).count()
     event = AuditEventModel(
         id=f"aud-{audit_count + 1}",
         at=datetime.now(timezone.utc).isoformat(),
-        actor=actor,
-        actor_role=role,
+        actor=str(actor or "System"),
+        actor_role=str(role or "SYSTEM"),
         action=action,
-        target=target,
+        target=str(target or "System"),
         severity=severity,
     )
     db.add(event)
 
 def to_platform_user_schema(u: PlatformUserModel) -> PlatformUserSchema:
     return PlatformUserSchema.model_construct(
-        id=u.id,
-        name=u.name,
-        email=u.email,
-        role=u.role,
-        orgUnitId=u.org_unit_id,
-        status=u.status,
-        lastSignIn=u.last_sign_in,
-        mfaEnabled=u.mfa_enabled,
+        id=str(u.id),
+        name=str(u.name),
+        email=str(u.email),
+        role=str(u.role),
+        orgUnitId=str(u.org_unit_id),
+        status=str(u.status), # type: ignore
+        lastSignIn=str(u.last_sign_in),
+        mfaEnabled=bool(u.mfa_enabled),
         avatar=u.avatar,
+        phone=getattr(u, "phone", None),
+    )
+
+def user_model_to_platform_schema(u: UserModel, p_user: Optional[PlatformUserModel] = None) -> PlatformUserSchema:
+    role = (p_user.role if p_user and p_user.role else None) or u.effective_role or "CHW"
+    org_unit = (p_user.org_unit_id if p_user and p_user.org_unit_id else None) or u.team_id or u.district_id or u.region_id or u.organization_id or "RHA"
+    last_sign_in = (p_user.last_sign_in if p_user and p_user.last_sign_in and p_user.last_sign_in != "Never" else None) or (u.last_login_at.strftime("%Y-%m-%d %H:%M:%S") if u.last_login_at else "Never")
+    avatar = (p_user.avatar if p_user and p_user.avatar else None) or u.avatar
+    phone = (p_user.phone if hasattr(p_user, "phone") and p_user.phone else None) or u.phone
+    mfa_enabled = bool(u.mfa_enabled or (p_user and p_user.mfa_enabled))
+    status_val = u.status if u.status in ["ACTIVE", "INVITED", "SUSPENDED"] else (p_user.status if p_user and p_user.status in ["ACTIVE", "INVITED", "SUSPENDED"] else "ACTIVE")
+    name = (p_user.name if p_user and p_user.name else None) or u.display_name or u.full_name or u.username
+
+    return PlatformUserSchema.model_construct(
+        id=str(u.id),
+        name=str(name),
+        email=str(u.email),
+        role=str(role),
+        orgUnitId=str(org_unit),
+        status=str(status_val), # type: ignore
+        lastSignIn=str(last_sign_in),
+        mfaEnabled=mfa_enabled,
+        avatar=avatar,
+        phone=phone,
     )
 
 @router.get("/users", response_model=List[PlatformUserSchema])
 def list_users(db: Session = Depends(get_db), current_user: UserModel = Depends(get_current_user)):
-    q = db.query(PlatformUserModel)
-    if current_user.effective_role == "REGIONAL_ADMIN":
-        region_code = None
-        if current_user.region_id:
-            region = db.query(RegionModel).filter(RegionModel.id == current_user.region_id).first()
-            if region:
-                region_code = region.code
+    user_models = db.query(UserModel).filter(UserModel.deleted_at.is_(None)).all()
+    p_users = db.query(PlatformUserModel).all()
+    p_user_by_id = {pu.id: pu for pu in p_users}
+    p_user_by_email = {pu.email.lower(): pu for pu in p_users if pu.email}
 
+    results: List[PlatformUserSchema] = []
+    seen_ids = set()
+    seen_emails = set()
+
+    for u in user_models:
+        pu = p_user_by_id.get(u.id) or p_user_by_email.get(u.email.lower() if u.email else "")
+        schema = user_model_to_platform_schema(u, pu)
+        results.append(schema)
+        seen_ids.add(u.id)
+        if u.email:
+            seen_emails.add(u.email.lower())
+
+    # Include any legacy PlatformUserModel records not in UserModel
+    for pu in p_users:
+        if pu.id not in seen_ids and (not pu.email or pu.email.lower() not in seen_emails):
+            results.append(to_platform_user_schema(pu))
+            seen_ids.add(pu.id)
+
+    if current_user.effective_role == "REGIONAL_ADMIN":
+        region_code = _get_region_code(db, current_user)
         if region_code:
-            l1_l2_ids = [u.id for u in db.query(OrgUnitModel).filter(
+            l1_l2_ids = [ou.id for ou in db.query(OrgUnitModel).filter(
                 (OrgUnitModel.id == region_code) |
                 (OrgUnitModel.parent_id == region_code)
             ).all()]
-            l3_ids = [u.id for u in db.query(OrgUnitModel).filter(OrgUnitModel.parent_id.in_(l1_l2_ids)).all()]
-            org_ids = list(set(l1_l2_ids + l3_ids))
-            q = q.filter(PlatformUserModel.org_unit_id.in_(org_ids))
+            l3_ids = [ou.id for ou in db.query(OrgUnitModel).filter(OrgUnitModel.parent_id.in_(l1_l2_ids)).all()]
+            org_ids = set(l1_l2_ids + l3_ids + [region_code])
+            results = [r for r in results if r.orgUnitId in org_ids]
         else:
-            q = q.filter(PlatformUserModel.id == "NONE")
-    users = q.all()
-    return [to_platform_user_schema(u) for u in users]
+            results = []
+
+    return results
 
 @router.post("/users", response_model=PlatformUserSchema)
 def invite_user(payload: InviteUserRequest, db: Session = Depends(get_db), current_user: UserModel = Depends(get_current_user)):
@@ -172,13 +226,48 @@ def invite_user(payload: InviteUserRequest, db: Session = Depends(get_db), curre
         if not is_allowed:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Cannot invite user to an org unit outside your region.")
 
-    count = db.query(PlatformUserModel).count()
+    count = db.query(PlatformUserModel).count() + db.query(UserModel).count()
     user_id = f"usr-{str(count + 1).zfill(4)}"
     
-    new_user = PlatformUserModel(
+    # Check if user already exists
+    clean_email = payload.email.strip().lower()
+    existing = db.query(UserModel).filter(UserModel.email == clean_email).first()
+    if existing:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="A user with this email already exists.")
+
+    name_parts = payload.name.strip().split(" ", 1)
+    first_name = name_parts[0]
+    last_name = name_parts[1] if len(name_parts) > 1 else name_parts[0]
+
+    # Create Core UserModel
+    new_core_user = UserModel(
+        id=user_id,
+        username=clean_email,
+        email=clean_email,
+        password_hash=hash_password("demo1234"),
+        first_name=first_name,
+        last_name=last_name,
+        display_name=payload.name.strip(),
+        phone=payload.phone,
+        preferred_language="en",
+        status="INVITED",
+        is_email_verified=False,
+        avatar=payload.avatar,
+    )
+    db.add(new_core_user)
+    db.flush()
+
+    # Assign Role in RBAC
+    role_obj = db.query(RoleModel).filter(RoleModel.code == payload.role).first()
+    if role_obj:
+        ur = UserRoleModel(user_id=new_core_user.id, role_id=role_obj.id)
+        db.add(ur)
+
+    # Also add to PlatformUserModel for legacy compatibility
+    new_platform_user = PlatformUserModel(
         id=user_id,
         name=payload.name,
-        email=payload.email,
+        email=clean_email,
         role=payload.role,
         org_unit_id=payload.orgUnitId,
         status="INVITED",
@@ -186,34 +275,35 @@ def invite_user(payload: InviteUserRequest, db: Session = Depends(get_db), curre
         mfa_enabled=False,
         avatar=payload.avatar,
     )
-    db.add(new_user)
+    db.add(new_platform_user)
+
     log_audit(
         db,
         actor=current_user.display_name or current_user.username,
         role=current_user.effective_role,
         action=f"Invited new user ({payload.role})",
-        target=payload.email,
+        target=clean_email,
         severity="INFO",
     )
     db.commit()
-    db.refresh(new_user)
-    return to_platform_user_schema(new_user)
+    db.refresh(new_core_user)
+    return user_model_to_platform_schema(new_core_user, new_platform_user)
 
-def _get_region_code(db: Session, current_user: UserModel) -> str | None:
+def _get_region_code(db: Session, current_user: UserModel) -> Optional[str]:
     if not current_user.region_id:
         return None
-    region = db.query(RegionModel).filter(RegionModel.id == current_user.region_id).first()
-    return region.code if region else None
+    region = db.query(RegionModel).filter(RegionModel.id == str(current_user.region_id)).first()
+    return str(region.code) if region and region.code else None
 
-def _require_user_in_scope(db: Session, current_user: UserModel, target_user: PlatformUserModel):
+def _require_user_in_scope(db: Session, current_user: UserModel, target_user: Union[PlatformUserModel, UserModel]) -> None:
     if current_user.effective_role == "REGIONAL_ADMIN":
         region_code = _get_region_code(db, current_user)
                 
         if not region_code:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
 
-        # user's org unit must be in current_user's region or one of its child districts/teams
-        org = db.query(OrgUnitModel).filter(OrgUnitModel.id == target_user.org_unit_id).first()
+        org_unit_id = getattr(target_user, 'org_unit_id', None) or getattr(target_user, 'region_id', None) or getattr(target_user, 'district_id', None) or getattr(target_user, 'team_id', None)
+        org = db.query(OrgUnitModel).filter(OrgUnitModel.id == str(org_unit_id)).first() if org_unit_id else None
         if not org:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Cannot modify user outside your region.")
             
@@ -221,7 +311,7 @@ def _require_user_in_scope(db: Session, current_user: UserModel, target_user: Pl
         if org.id == region_code or org.parent_id == region_code:
             is_allowed = True
         elif org.parent_id:
-            parent_org = db.query(OrgUnitModel).filter(OrgUnitModel.id == org.parent_id).first()
+            parent_org = db.query(OrgUnitModel).filter(OrgUnitModel.id == str(org.parent_id)).first()
             if parent_org and parent_org.parent_id == region_code:
                 is_allowed = True
                 
@@ -231,108 +321,166 @@ def _require_user_in_scope(db: Session, current_user: UserModel, target_user: Pl
 @router.patch("/users/{id}/status", response_model=PlatformUserSchema)
 def set_user_status(id: str, payload: UserStatusUpdate, db: Session = Depends(get_db), current_user: UserModel = Depends(get_current_user)):
     user = db.query(PlatformUserModel).filter(PlatformUserModel.id == id).first()
-    if not user:
+    core_user = db.query(UserModel).filter(UserModel.id == id).first()
+    target_user = user or core_user
+    if not target_user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="USER_NOT_FOUND")
-    _require_user_in_scope(db, current_user, user)
+    _require_user_in_scope(db, current_user, target_user)
 
-    user.status = payload.status
+    if user:
+        setattr(user, "status", str(payload.status))
+    if core_user:
+        setattr(core_user, "status", str(payload.status))
+
+    target_email = str((user.email if user else None) or (core_user.email if core_user else id))
     log_audit(
         db,
         actor=current_user.display_name or current_user.username,
         role=current_user.effective_role,
         action=f"Set account status to {payload.status.lower()}",
-        target=user.email,
+        target=target_email,
         severity="WARNING" if payload.status == "SUSPENDED" else "INFO",
     )
     db.commit()
-    db.refresh(user)
-    return to_platform_user_schema(user)
+    if core_user:
+        db.refresh(core_user)
+        return user_model_to_platform_schema(core_user, user)
+    if user:
+        db.refresh(user)
+        return to_platform_user_schema(user)
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="USER_NOT_FOUND")
 
 @router.patch("/users/{id}/role", response_model=PlatformUserSchema)
 def set_user_role(id: str, payload: UserRoleUpdate, db: Session = Depends(get_db), current_user: UserModel = Depends(get_current_user)):
     user = db.query(PlatformUserModel).filter(PlatformUserModel.id == id).first()
-    if not user:
+    core_user = db.query(UserModel).filter(UserModel.id == id).first()
+    target_user = user or core_user
+    if not target_user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="USER_NOT_FOUND")
-    _require_user_in_scope(db, current_user, user)
+    _require_user_in_scope(db, current_user, target_user)
 
-    user.role = payload.role
+    if user:
+        setattr(user, "role", payload.role)
+    if core_user:
+        role_obj = db.query(RoleModel).filter(RoleModel.code == payload.role).first()
+        if role_obj:
+            existing_ur = db.query(UserRoleModel).filter(UserRoleModel.user_id == core_user.id).first()
+            if existing_ur:
+                setattr(existing_ur, "role_id", role_obj.id)
+                setattr(existing_ur, "is_active", True)
+            else:
+                db.add(UserRoleModel(user_id=str(core_user.id), role_id=str(role_obj.id)))
+
+    target_email = str((user.email if user else None) or (core_user.email if core_user else id))
     log_audit(
         db,
         actor=current_user.display_name or current_user.username,
         role=current_user.effective_role,
         action=f"Changed role to {payload.role}",
-        target=user.email,
+        target=target_email,
         severity="CRITICAL",
     )
     db.commit()
-    db.refresh(user)
-    return to_platform_user_schema(user)
+    if core_user:
+        db.refresh(core_user)
+        return user_model_to_platform_schema(core_user, user)
+    if user:
+        db.refresh(user)
+        return to_platform_user_schema(user)
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="USER_NOT_FOUND")
 
 @router.patch("/users/{id}/avatar", response_model=PlatformUserSchema)
 def set_user_avatar(id: str, payload: UserAvatarUpdate, db: Session = Depends(get_db), current_user: UserModel = Depends(get_current_user)):
     user = db.query(PlatformUserModel).filter(PlatformUserModel.id == id).first()
-    if not user:
+    core_user = db.query(UserModel).filter(UserModel.id == id).first()
+    target_user = user or core_user
+    if not target_user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="USER_NOT_FOUND")
-    _require_user_in_scope(db, current_user, user)
+    _require_user_in_scope(db, current_user, target_user)
 
-    user.avatar = payload.avatar if payload.avatar and payload.avatar.strip() else None
-
-    # Sync to UserModel if exists
-    core_user = db.query(UserModel).filter(
-        (UserModel.id == id) | (UserModel.email == user.email)
-    ).first()
+    avatar_val = payload.avatar if payload.avatar and payload.avatar.strip() else None
+    if user:
+        setattr(user, "avatar", avatar_val)
     if core_user:
-        core_user.avatar = user.avatar
+        setattr(core_user, "avatar", avatar_val)
 
+    target_email = str((user.email if user else None) or (core_user.email if core_user else id))
     log_audit(
         db,
         actor=current_user.display_name or current_user.username,
         role=current_user.effective_role,
-        action="Updated user profile picture" if user.avatar else "Removed user profile picture",
-        target=user.email,
+        action="Updated user profile picture" if avatar_val else "Removed user profile picture",
+        target=target_email,
         severity="INFO",
     )
     db.commit()
-    db.refresh(user)
-    return to_platform_user_schema(user)
+    if core_user:
+        db.refresh(core_user)
+        return user_model_to_platform_schema(core_user, user)
+    if user:
+        db.refresh(user)
+        return to_platform_user_schema(user)
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="USER_NOT_FOUND")
 
 @router.post("/users/{id}/toggle-mfa", response_model=PlatformUserSchema)
+@router.post("/users/{id}/mfa", response_model=PlatformUserSchema)
 def toggle_mfa(id: str, db: Session = Depends(get_db), current_user: UserModel = Depends(get_current_user)):
     user = db.query(PlatformUserModel).filter(PlatformUserModel.id == id).first()
-    if not user:
+    core_user = db.query(UserModel).filter(UserModel.id == id).first()
+    target_user = user or core_user
+    if not target_user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="USER_NOT_FOUND")
-    _require_user_in_scope(db, current_user, user)
+    _require_user_in_scope(db, current_user, target_user)
 
-    user.mfa_enabled = not user.mfa_enabled
+    curr_mfa = bool((user and user.mfa_enabled) or (core_user and core_user.mfa_enabled))
+    next_mfa = not curr_mfa
+    if user:
+        setattr(user, "mfa_enabled", next_mfa)
+    if core_user:
+        setattr(core_user, "mfa_enabled", next_mfa)
+
+    target_email = str((user.email if user else None) or (core_user.email if core_user else id))
     log_audit(
         db,
         actor=current_user.display_name or current_user.username,
         role=current_user.effective_role,
-        action="Enforced MFA" if user.mfa_enabled else "Removed MFA requirement",
-        target=user.email,
-        severity="INFO" if user.mfa_enabled else "WARNING",
+        action="Enforced MFA" if next_mfa else "Removed MFA requirement",
+        target=target_email,
+        severity="INFO" if next_mfa else "WARNING",
     )
     db.commit()
-    db.refresh(user)
-    return to_platform_user_schema(user)
+    if core_user:
+        db.refresh(core_user)
+        return user_model_to_platform_schema(core_user, user)
+    if user:
+        db.refresh(user)
+        return to_platform_user_schema(user)
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="USER_NOT_FOUND")
 
 @router.post("/users/{id}/resend-invite", response_model=PlatformUserSchema)
 def resend_invite(id: str, db: Session = Depends(get_db), current_user: UserModel = Depends(get_current_user)):
     user = db.query(PlatformUserModel).filter(PlatformUserModel.id == id).first()
-    if not user:
+    core_user = db.query(UserModel).filter(UserModel.id == id).first()
+    target_user = user or core_user
+    if not target_user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="USER_NOT_FOUND")
-    _require_user_in_scope(db, current_user, user)
+    _require_user_in_scope(db, current_user, target_user)
 
+    target_email = str((user.email if user else None) or (core_user.email if core_user else id))
     log_audit(
         db,
         actor=current_user.display_name or current_user.username,
         role=current_user.effective_role,
         action="Resent account invitation",
-        target=user.email,
+        target=target_email,
         severity="INFO",
     )
     db.commit()
-    return to_platform_user_schema(user)
+    if core_user:
+        return user_model_to_platform_schema(core_user, user)
+    if user:
+        return to_platform_user_schema(user)
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="USER_NOT_FOUND")
 
 @router.get("/org-units", response_model=List[OrgUnitSchema])
 def list_org_units(db: Session = Depends(get_db), current_user: UserModel = Depends(get_current_user)):
@@ -472,7 +620,7 @@ def update_role_permissions(role: str, payload: RolePermissionsUpdate, db: Sessi
     if not role_def:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="ROLE_NOT_FOUND")
 
-    role_def.permissions = payload.permissions
+    setattr(role_def, "permissions", payload.permissions)
     log_audit(
         db,
         actor=current_user.display_name or current_user.username,
@@ -528,8 +676,8 @@ def restart_service(id: str, db: Session = Depends(get_db), current_user: UserMo
     if not svc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="SERVICE_NOT_FOUND")
 
-    svc.status = "OPERATIONAL"
-    svc.detail = "Recovered after manual restart."
+    setattr(svc, "status", "OPERATIONAL")
+    setattr(svc, "detail", "Recovered after manual restart.")
     log_audit(
         db,
         actor=current_user.display_name or current_user.username,
@@ -577,7 +725,7 @@ def update_setting(payload: SettingUpdateRequest, db: Session = Depends(get_db),
         setting = SystemSettingModel(key=payload.key, value=payload.value)
         db.add(setting)
     else:
-        setting.value = payload.value
+        setattr(setting, "value", payload.value)
 
     log_audit(
         db,
@@ -591,3 +739,4 @@ def update_setting(payload: SettingUpdateRequest, db: Session = Depends(get_db),
 
     all_settings = db.query(SystemSettingModel).all()
     return {s.key: s.value for s in all_settings}
+

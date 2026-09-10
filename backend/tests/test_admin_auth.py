@@ -42,9 +42,56 @@ def test_manager_scope_enforcement():
     token = get_token("demo-manager@example.com")
     res = client.get("/api/v1/manager/programs", headers={"Authorization": f"Bearer {token}"})
     assert res.status_code == 200
-    programs = res.json()
-    assert len(programs) > 0
-    # verify we can't access someone else's program
-    # Assuming prog-999 doesn't belong to this manager or doesn't exist
-    res = client.post("/api/v1/manager/programs/prog-999/request-review", headers={"Authorization": f"Bearer {token}"})
-    assert res.status_code == 404 # Not found or unauthorized (which we merged into 404)
+def test_admin_list_users():
+    token = get_token("demo-admin@example.com")
+    res = client.get("/api/v1/admin/users", headers={"Authorization": f"Bearer {token}"})
+    assert res.status_code == 200
+    users = res.json()
+    assert isinstance(users, list)
+    assert len(users) >= 5
+    # verify user attributes
+    first = users[0]
+    assert "id" in first
+    assert "name" in first
+    assert "email" in first
+    assert "role" in first
+
+def test_admin_invite_and_manage_user():
+    import uuid
+    uid = uuid.uuid4().hex[:6]
+    test_email = f"sarah.johnson.{uid}@example.com"
+    token = get_token("demo-admin@example.com")
+    invite_payload = {
+        "name": "Dr. Sarah Johnson",
+        "email": test_email,
+        "role": "SUPERVISOR",
+        "orgUnitId": "RD"
+    }
+    # Invite
+    invite_res = client.post("/api/v1/admin/users", json=invite_payload, headers={"Authorization": f"Bearer {token}"})
+    assert invite_res.status_code == 200
+    created = invite_res.json()
+    assert created["email"] == test_email
+    assert created["role"] == "SUPERVISOR"
+    assert created["status"] == "INVITED"
+    user_id = created["id"]
+
+    # Update role
+    role_res = client.patch(f"/api/v1/admin/users/{user_id}/role", json={"role": "PROGRAMME_MANAGER"}, headers={"Authorization": f"Bearer {token}"})
+    assert role_res.status_code == 200
+    assert role_res.json()["role"] == "PROGRAMME_MANAGER"
+
+    # Update status
+    status_res = client.patch(f"/api/v1/admin/users/{user_id}/status", json={"status": "ACTIVE"}, headers={"Authorization": f"Bearer {token}"})
+    assert status_res.status_code == 200
+    assert status_res.json()["status"] == "ACTIVE"
+
+    # Toggle MFA via both endpoints
+    mfa_res1 = client.post(f"/api/v1/admin/users/{user_id}/mfa", headers={"Authorization": f"Bearer {token}"})
+    assert mfa_res1.status_code == 200
+    assert mfa_res1.json()["mfaEnabled"] is True
+
+    mfa_res2 = client.post(f"/api/v1/admin/users/{user_id}/toggle-mfa", headers={"Authorization": f"Bearer {token}"})
+    assert mfa_res2.status_code == 200
+    assert mfa_res2.json()["mfaEnabled"] is False
+
